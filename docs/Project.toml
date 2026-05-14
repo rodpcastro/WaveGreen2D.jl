@@ -1,0 +1,3 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+WaveGreen2D = "afc8eec6-141e-41d8-af30-fb693dc34844"

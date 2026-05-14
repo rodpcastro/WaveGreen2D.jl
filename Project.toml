@@ -1,0 +1,7 @@
+name = "WaveGreen2D"
+uuid = "afc8eec6-141e-41d8-af30-fb693dc34844"
+authors = ["Rodrigo Castro <code@rpc.aleeas.com>"]
+version = "0.0.1"
+
+[compat]
+julia = "1.12"

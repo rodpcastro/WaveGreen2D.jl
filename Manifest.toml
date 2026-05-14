@@ -1,0 +1,10 @@
+# This file is machine-generated - editing it directly is not advised
+
+julia_version = "1.12.6"
+manifest_format = "2.0"
+project_hash = "4953d0e3055bd7f0c18f430768909667c4eb64fd"
+
+[[deps.WaveGreen2D]]
+path = "."
+uuid = "afc8eec6-141e-41d8-af30-fb693dc34844"
+version = "0.0.1"
