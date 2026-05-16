@@ -1,5 +1,6 @@
 module WaveGreen2D
 
-# Write your package code here.
+include("Chebyshev/Chebyshev.jl")
+using .Chebyshev
 
 end
