@@ -1,4 +1,5 @@
-# WaveGreen2D
+# WaveGreen2D (Work in Progress)
+
 This package was created with the following Julia commands:
 
 ```julia
