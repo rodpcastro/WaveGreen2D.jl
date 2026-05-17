@@ -51,6 +51,7 @@ end
 @testset "2-D contains" begin
     cs = ChebyshevSeries(zeros(2, 2), SA[5.0, -3.5], SA[6.0, 0.5])
     @test contains(cs, SA[5.1, -1.5])
+    @test contains(cs, [5.5, -3.0])
     @test !contains(cs, SA[4.9, 0.0])
 end
 
@@ -58,6 +59,7 @@ end
 @testset "3-D contains" begin
     cs = ChebyshevSeries(zeros(2, 2, 2), SA[0.5, -1.2, 3.0], SA[1.5, 0.3, 3.5])
     @test contains(cs, SA[1.0, 0.0, 3.2])
+    @test contains(cs, [1.4, 0.2, 3.1])
     @test !contains(cs, SA[0.5, 0.3, 3.55])
 end
 
@@ -246,4 +248,15 @@ end
     @test dy₂_dx ≈ df₂_dx
     @test d²y₁_dx² ≈ d²f₁_dx²
     @test d²y₂_dx² ≈ d²f₂_dx²
+end
+
+
+@testset "1-D cluster DomainError" begin
+    cs₁ = ChebyshevSeries(zeros(2), SA[-1.0], SA[-0.5])
+    cs₂ = ChebyshevSeries(ones(2), SA[-0.5], SA[2.5])
+    cc = ChebyshevCluster(cs₁, cs₂)
+
+    @test_throws DomainError cc(-2.0)
+    @test_throws DomainError gradient(cc, 3.0)
+    @test_throws DomainError hessian(cc, 4.0)
 end
