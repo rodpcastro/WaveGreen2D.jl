@@ -1,6 +1,6 @@
 module Chebyshev
 
-export ChebyshevSeries, ChebyshevCluster, gradient, hessian
+export ChebyshevSeries, Transformation, ChebyshevCluster, gradient, hessian
 
 using StaticArrays
 
@@ -23,17 +23,33 @@ struct ChebyshevSeries{T, N}
 end
 
 
+function ChebyshevSeries(coefs::Array{T, 1}, lb::T, ub::T) where T
+    return ChebyshevSeries(coefs, SVector{1, T}(lb), SVector{1, T}(ub))
+end
+
+
 function ChebyshevSeries(coefs::Array{T, 0}, lb::SVector{0}, ub::SVector{0}) where T
     return coefs[]
 end
 
 
-"""A collection of `ChebyshevSeries` objects."""
-struct ChebyshevCluster{T, N, M}
-    series::NTuple{M, ChebyshevSeries{T, N}}
+# TODO: Change How Transformation and ChebyshevCluster are combined. I believe I
+# need T and N type parameters also included in the transformations (How to do this?).
+struct Transformation{F<:Function, G<:Function, H<:Function}
+    u::F
+    ∇u::G
+    Hu::H
 end
 
 
+"""A collection of `ChebyshevSeries` objects."""  # TODO: Improve this description
+struct ChebyshevCluster{T, N, M}
+    series::NTuple{M, ChebyshevSeries{T, N}}
+    tforms::NTuple{M, Transformation}
+end
+
+
+# TODO: Modify this Cluster definition to make identity transfomrations by default.
 function ChebyshevCluster(series::ChebyshevSeries{T, N}...) where {T, N}
     M = length(series)
     return ChebyshevCluster{T, N, M}(series)
@@ -69,12 +85,14 @@ end
 
 function contains(g::ChebyshevCluster{T, N, M}, x::Union{AbstractVector{T}, T}) where {T, N, M}
     for i in 1:M
-        if contains(g.series[i], x)
+        u = g.tforms[i].u(x)
+        if contains(g.series[i], u)
             return true, i
         end
     end
     return false, nothing
 end
+
 
 include("clenshaw.jl")
 include("gradient.jl")

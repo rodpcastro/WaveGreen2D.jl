@@ -148,16 +148,32 @@ end
 
 function hessian(f::ChebyshevSeries{T, 1}, x::T) where T
     res = hessian(f, SVector{1, T}(x))
-    return res[1][], res[2][], res[3][]
+    return res[1], res[2][], res[3][]
 end
 
 
-# function hessian(g::ChebyshevCluster{T, N, M}, x::Union{AbstractVector{T}, T}) where {T, N, M}
-#     x_in_g, i = contains(g, x)
-    
-#     if x_in_g
-#         return hessian(g.series[i], x)
-#     else
-#         throw(DomainError(x))
-#     end
-# end
+function hessian(g::ChebyshevCluster{T, N, M}, x::AbstractVector{T}) where {T, N, M}
+    for i in 1:M
+        u = g.tforms[i].u(x)
+        if contains(g.series[i], u)
+            ∇ₓu = g.tforms[i].∇u(x)
+            Hₓu = g.tforms[i].Hu(x)
+            f, ∇ᵤf, Hᵤf = hessian(g.series[i], u)
+            
+            # ∂f/∂x = ∂f/∂u ⋅ ∂u/∂x
+            ∇f = ∇ₓu' * ∇ᵤf
+            
+            # ∂²f/∂x² = ∂f/∂u ⋅ ∂²u/∂x² + ∂²f/∂u² ⋅ (∂u/∂x)²
+            Hf = (reshape(reshape(Hₓu, N, :)' * ∇ᵤf, N, N))' + ∇ₓu' * Hᵤf * ∇ₓu
+            
+            return f, ∇f, Hf
+        end
+    end
+    throw(DomainError(x))
+end
+
+
+function hessian(g::ChebyshevCluster{T, 1, M}, x::T) where {T, M}
+    f, ∇f, Hf = hessian(g, SVector{1, T}(x))
+    return f, ∇f[], Hf[]
+end

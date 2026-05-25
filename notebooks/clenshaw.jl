@@ -81,16 +81,22 @@ end
 
 
 function (f::ChebyshevSeries{T, 1})(x::T) where T
-    return f(SVector{1, T}(x))[]
+    return f(SVector{1, T}(x))
 end
 
 
-# function (g::ChebyshevCluster{T, N, M})(x::Union{AbstractVector{T}, T}) where {T, N, M}
-#     x_in_g, i = contains(g, x)
-    
-#     if x_in_g
-#         return g.series[i](x)
-#     else
-#         throw(DomainError(x))
-#     end
-# end
+function (g::ChebyshevCluster{T, N, M})(x::AbstractVector{T}) where {T, N, M}
+    for i in 1:M
+        u = g.tforms[i].u(x)
+        if contains(g.series[i], u)
+            return g.series[i](u)
+        end
+    end
+    throw(DomainError(x))
+end
+
+
+function (g::ChebyshevCluster{T, 1, M})(x::T) where {T, M}
+    f = g(SVector{1, T}(x))
+    return f
+end

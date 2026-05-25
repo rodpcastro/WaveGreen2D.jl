@@ -102,16 +102,28 @@ end
 
 function gradient(f::ChebyshevSeries{T, 1}, x::T) where T
     res = gradient(f, SVector{1, T}(x))
-    return res[1][], res[2][]
+    return res[1], res[2][]
 end
 
 
-# function gradient(g::ChebyshevCluster{T, N, M}, x::Union{AbstractVector{T}, T}) where {T, N, M}
-#     x_in_g, i = contains(g, x)
-    
-#     if x_in_g
-#         return gradient(g.series[i], x)
-#     else
-#         throw(DomainError(x))
-#     end
-# end
+function gradient(g::ChebyshevCluster{T, N, M}, x::AbstractVector{T}) where {T, N, M}
+    for i in 1:M
+        u = g.tforms[i].u(x)
+        if contains(g.series[i], u)
+            ∇ₓu = g.tforms[i].∇u(x)
+            f, ∇ᵤf = gradient(g.series[i], u)
+            
+            # ∂f/∂x = ∂f/∂u ⋅ ∂u/∂x
+            ∇f = ∇ₓu' * ∇ᵤf
+            
+            return f, ∇f
+        end
+    end
+    throw(DomainError(x))
+end
+
+
+function gradient(g::ChebyshevCluster{T, 1, M}, x::T) where {T, M}
+    f, ∇f = gradient(g, SVector{1, T}(x))
+    return f, ∇f[]
+end
