@@ -95,35 +95,33 @@ function gradient(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
 end
 
 
-function gradient(f::ChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N}
-    return gradient(f, SVector{N, T}(x))
+function gradient(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+    y, ∇ᵤy = gradient(g.series, g.u(x))
+    ∇ₓu = g.∇u(x)
+    
+    # ∂y/∂x = ∂y/∂u ⋅ ∂u/∂x
+    ∇y = ∇ₓu' * ∇ᵤy
+    
+    return y, ∇y
 end
 
 
-function gradient(f::ChebyshevSeries{T, 1}, x::T) where T
-    res = gradient(f, SVector{1, T}(x))
-    return res[1], res[2][]
-end
-
-
-function gradient(g::ChebyshevCluster{T, N, M}, x::AbstractVector{T}) where {T, N, M}
+function gradient(h::ChebyshevCluster{T, N, M}, x::SVector{N, T}) where {T, N, M}
     for i in 1:M
-        u = g.tforms[i].u(x)
-        if contains(g.series[i], u)
-            ∇ₓu = g.tforms[i].∇u(x)
-            f, ∇ᵤf = gradient(g.series[i], u)
-            
-            # ∂f/∂x = ∂f/∂u ⋅ ∂u/∂x
-            ∇f = ∇ₓu' * ∇ᵤf
-            
-            return f, ∇f
+        if contains(h.series[i], x)
+            return gradient(h.series[i], x)
         end
     end
     throw(DomainError(x))
 end
 
 
-function gradient(g::ChebyshevCluster{T, 1, M}, x::T) where {T, M}
-    f, ∇f = gradient(g, SVector{1, T}(x))
-    return f, ∇f[]
+function gradient(f::AbstractChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N}
+    return gradient(f, SVector{N, T}(x))
+end
+
+
+function gradient(f::AbstractChebyshevSeries{T, 1}, x::T) where T
+    y, ∇y = gradient(f, SVector{1, T}(x))
+    return y, ∇y[]
 end

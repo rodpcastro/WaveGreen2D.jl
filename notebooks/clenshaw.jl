@@ -75,28 +75,26 @@ function (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N}
 end
 
 
-function (f::ChebyshevSeries{T, N})(x::AbstractVector{T}) where {T, N}
-    return f(SVector{N, T}(x))
+function (g::TransformedChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N}
+    return g.series(g.u(x))
 end
 
 
-function (f::ChebyshevSeries{T, 1})(x::T) where T
-    return f(SVector{1, T}(x))
-end
-
-
-function (g::ChebyshevCluster{T, N, M})(x::AbstractVector{T}) where {T, N, M}
+function (h::ChebyshevCluster{T, N, M})(x::SVector{N, T}) where {T, N, M}
     for i in 1:M
-        u = g.tforms[i].u(x)
-        if contains(g.series[i], u)
-            return g.series[i](u)
+        if contains(h.series[i], x)
+            return h.series[i](x)
         end
     end
     throw(DomainError(x))
 end
 
 
-function (g::ChebyshevCluster{T, 1, M})(x::T) where {T, M}
-    f = g(SVector{1, T}(x))
-    return f
+function (f::AbstractChebyshevSeries{T, N})(x::AbstractVector{T}) where {T, N}
+    return f(SVector{N, T}(x))
+end
+
+
+function (f::AbstractChebyshevSeries{T, 1})(x::T) where T
+    return f(SVector{1, T}(x))
 end

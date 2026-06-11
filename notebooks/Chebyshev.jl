@@ -1,8 +1,11 @@
 module Chebyshev
 
-export ChebyshevSeries, Transformation, ChebyshevCluster, gradient, hessian
+export AbstractChebyshevSeries, ChebyshevSeries, TransformedChebyshevSeries, ChebyshevCluster, gradient, hessian, contains, normalize
 
 using StaticArrays
+
+
+abstract type AbstractChebyshevSeries{T, N} end
 
 
 """
@@ -16,7 +19,7 @@ function defined in a bounded domain.
 - `lb::SVector{N, T}`: domain lower bound
 - `ub::SVector{N, T}`: domain upper bound
 """
-struct ChebyshevSeries{T, N}
+struct ChebyshevSeries{T, N} <: AbstractChebyshevSeries{T, N}
     coefs::Array{T, N}
     lb::SVector{N, T}
     ub::SVector{N, T}
@@ -33,24 +36,50 @@ function ChebyshevSeries(coefs::Array{T, 0}, lb::SVector{0}, ub::SVector{0}) whe
 end
 
 
-# TODO: Change How Transformation and ChebyshevCluster are combined. I believe I
-# need T and N type parameters also included in the transformations (How to do this?).
-struct Transformation{F<:Function, G<:Function, H<:Function}
+struct TransformedChebyshevSeries{T, N, F<:Function, G<:Function, H<:Function} <: AbstractChebyshevSeries{T, N}
+    series::ChebyshevSeries{T, N}
     u::F
     ∇u::G
     Hu::H
+
+    function TransformedChebyshevSeries(
+        series::ChebyshevSeries{T, N}, u::F, ∇u::G, Hu::H,
+    ) where {T, N, F<:Function, G<:Function, H<:Function}
+        
+        if !all(hasmethod.([u, ∇u, Hu], Tuple{SVector{N, T}}))
+            error("The transformation function must accept an argument of type SVector{$N, $T}")
+        end
+
+        u_return_type = Core.Compiler.return_type(u, Tuple{SVector{N, T}})
+        u_proper_type = SVector{N, T}
+        if !(u_return_type <: u_proper_type)
+            error("The transformation function must return a $u_proper_type")
+        end
+        
+        ∇u_return_type = Core.Compiler.return_type(∇u, Tuple{SVector{N, T}})
+        ∇u_proper_type = SMatrix{N, N, T, N^2}
+        if !(∇u_return_type <: ∇u_proper_type)
+            error("The gradient of the transformation function must return a $∇u_proper_type")
+        end
+
+        Hu_return_type = Core.Compiler.return_type(Hu, Tuple{SVector{N, T}})
+        Hu_proper_type = SArray{Tuple{N, N, N}, T, 3, N^3}
+        if !(Hu_return_type <: Hu_proper_type)
+            error("The hessian of the transformation function must return a $Hu_proper_type")
+        end
+
+        return new{T, N, F, G, H}(series, u, ∇u, Hu)
+    end
 end
 
 
-"""A collection of `ChebyshevSeries` objects."""  # TODO: Improve this description
-struct ChebyshevCluster{T, N, M}
-    series::NTuple{M, ChebyshevSeries{T, N}}
-    tforms::NTuple{M, Transformation}
+"""A collection of equidimensional `AbstractChebyshevSeries` objects."""
+struct ChebyshevCluster{T, N, M} <: AbstractChebyshevSeries{T, N}
+    series::NTuple{M, AbstractChebyshevSeries{T, N}}
 end
 
 
-# TODO: Modify this Cluster definition to make identity transfomrations by default.
-function ChebyshevCluster(series::ChebyshevSeries{T, N}...) where {T, N}
+function ChebyshevCluster(series::AbstractChebyshevSeries{T, N}...) where {T, N}
     M = length(series)
     return ChebyshevCluster{T, N, M}(series)
 end
@@ -62,8 +91,8 @@ function normalize(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
 end
 
 
-function normalize(f::ChebyshevSeries{T, 1}, x::T) where T
-    return normalize(f, SVector{1, T}(x))[]
+function normalize(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+    return normalize(g.series, g.u(x))
 end
 
 
@@ -73,20 +102,14 @@ function contains(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
 end
 
 
-function contains(f::ChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N}
-    return contains(f, SVector{N, T}(x))
+function contains(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+    return contains(g.series, g.u(x))
 end
 
 
-function contains(f::ChebyshevSeries{T, 1}, x::T) where T
-    return contains(f, SVector{1, T}(x))
-end
-
-
-function contains(g::ChebyshevCluster{T, N, M}, x::Union{AbstractVector{T}, T}) where {T, N, M}
+function contains(h::ChebyshevCluster{T, N, M}, x::SVector{N, T}) where {T, N, M}
     for i in 1:M
-        u = g.tforms[i].u(x)
-        if contains(g.series[i], u)
+        if contains(h.series[i], x)
             return true, i
         end
     end
