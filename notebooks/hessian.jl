@@ -16,8 +16,7 @@ order partial derivatives with respect to the `N`-th dimension at a value `x` of
 - `ChebyshevSeries{T, N-1}`: second-order partial derivative of `f` with
   respect to the `N`-th dimension evaluated at `x`
 """
-function hessian_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
-    a = f.coefs
+function hessian_clenshaw(a::Array{T, N}, x::T) where {T, N}
     n = size(a, N)
     dx = 2x
 
@@ -64,27 +63,21 @@ function hessian_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
     @. bₖ = aₖ + x*bₖ₊₁ - bₖ
     @. cₖ = bₖ₊₁ + x*cₖ₊₁ - cₖ
     @. dₖ = 2.0*(cₖ₊₁ + x*dₖ₊₁ - dₖ)
-
-    lbc = SVector(ntuple(i -> f.lb[i], Val(N-1)))
-    ubc = SVector(ntuple(i -> f.ub[i], Val(N-1)))
     
-    fc = ChebyshevSeries(bₖ, lbc, ubc)
-    gc = ChebyshevSeries(cₖ, lbc, ubc)
-    hc = ChebyshevSeries(dₖ, lbc, ubc)
-    
-    return fc, gc, hc
+    return bₖ, cₖ, dₖ
 end
 
 
-function hessian_clenshaw(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    fc, gc, hc = hessian_clenshaw(f, x[N])
-    xc = SVector(ntuple(i -> x[i], Val(N-1)))
-    return hessian_clenshaw(fc, xc)..., gradient_clenshaw(gc, xc)..., clenshaw(hc, xc)
+function hessian_clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N}
+    b, c, d = hessian_clenshaw(a, x[N])
+    xᴺ⁻¹ = pop(x)
+    return hessian_clenshaw(b, xᴺ⁻¹)..., gradient_clenshaw(c, xᴺ⁻¹)..., clenshaw(d, xᴺ⁻¹)
 end
 
 
-function hessian_clenshaw(f::ChebyshevSeries{T, 1}, x::SVector{1, T}) where T
-    return hessian_clenshaw(f, x[])
+function hessian_clenshaw(a::Array{T, 1}, x::SVector{1, T}) where T
+    b, c, d = hessian_clenshaw(a, x[1])
+    return b[], c[], d[]
 end
 
 
@@ -130,21 +123,15 @@ function hessian(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
     gidx = [i*(i+1)÷2 + 1 for i in 1:N]
     hidx = [i*(i+1)÷2 + 1 + j for i in 1:N for j in 1:i]
 
-    res = hessian_clenshaw(f, x̄)
+    res = hessian_clenshaw(f.coefs, x̄)
     
     y = res[1]
-    ∇y = SVector{N, T}(ntuple(i -> res[gidx[i]], Val(N))) .* dx̄_dx
-    Hy_vec = SVector{K, T}(ntuple(i -> res[hidx[i]], Val(K)))
-    Hy = symmatrix(Hy_vec, Val(N)) .* dx̄_dx .* dx̄_dx'
-    
-    return y, ∇y, Hy
-end
+    ∇ᵤy = SVector{N, T}(ntuple(i -> res[gidx[i]], Val(N))) .* dx̄_dx
+    Hᵤy_vec = SVector{K, T}(ntuple(i -> res[hidx[i]], Val(K)))
+    Hᵤy = symmatrix(Hᵤy_vec, Val(N)) .* dx̄_dx .* dx̄_dx'
 
-
-function hessian(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    y, ∇ᵤy, Hᵤy = hessian(g.series, g.u(x))
-    ∇ₓu = g.∇u(x)
-    Hₓu = g.Hu(x)
+    ∇ₓu = f.tf.∇u(x)
+    Hₓu = f.tf.Hu(x)
     
     # ∂y/∂x = ∂y/∂u ⋅ ∂u/∂x
     ∇y = ∇ₓu' * ∇ᵤy
@@ -154,6 +141,21 @@ function hessian(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T
     
     return y, ∇y, Hy
 end
+
+
+# function hessian(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+#     y, ∇ᵤy, Hᵤy = hessian(g.series, g.u(x))
+#     ∇ₓu = g.∇u(x)
+#     Hₓu = g.Hu(x)
+    
+#     # ∂y/∂x = ∂y/∂u ⋅ ∂u/∂x
+#     ∇y = ∇ₓu' * ∇ᵤy
+    
+#     # ∂²y/∂x² = ∂y/∂u ⋅ ∂²u/∂x² + ∂²y/∂u² ⋅ (∂u/∂x)²
+#     Hy = (reshape(reshape(Hₓu, Size(N, N^2))' * ∇ᵤy, Size(N, N)))' + ∇ₓu' * Hᵤy * ∇ₓu
+    
+#     return y, ∇y, Hy
+# end
 
 
 function hessian(h::ChebyshevCluster{T, N, M}, x::AbstractVector{T}) where {T, N, M}

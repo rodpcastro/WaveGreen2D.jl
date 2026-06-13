@@ -11,8 +11,7 @@ series `f` at a value `x` of its `N`-th dimension.
 # Returns
 - `ChebyshevSeries{T, N-1}`: `f` evaluated at `x`
 """
-function clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
-    a = f.coefs
+function clenshaw(a::Array{T, N}, x::T) where {T, N}
     n = size(a, N)
     dx = 2x
     
@@ -35,25 +34,21 @@ function clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
     # k = 1
     aₖ = selectdim(a, N, 1)
     @. bₖ = aₖ + x*bₖ₊₁ - bₖ
-
-    lbc = SVector(ntuple(i -> f.lb[i], Val(N-1)))
-    ubc = SVector(ntuple(i -> f.ub[i], Val(N-1)))
     
-    fc = ChebyshevSeries(bₖ, lbc, ubc)
-    
-    return fc
+    return bₖ
 end
 
 
-function clenshaw(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    fc = clenshaw(f, x[N])
-    xc = SVector(ntuple(i -> x[i], Val(N-1)))
-    return clenshaw(fc, xc)
+function clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N}
+    b = clenshaw(a, x[N])
+    xᴺ⁻¹ = pop(x)
+    return clenshaw(b, xᴺ⁻¹)
 end
 
 
-function clenshaw(f::ChebyshevSeries{T, 1}, x::SVector{1, T}) where T
-    return clenshaw(f, x[])
+function clenshaw(a::Array{T, 1}, x::SVector{1, T}) where T
+    b = clenshaw(a, x[1])
+    return b[]
 end
 
 
@@ -70,35 +65,11 @@ Evaluates the series `f` at a point `x`.
 """
 function (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N}
     x̄ = normalize(f, x)
-    y = clenshaw(f, x̄)
+    y = clenshaw(f.coefs, x̄)
     return y
 end
 
 
-function (g::TransformedChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N}
-    return g.series(g.u(x))
-end
-
-
-# function (h::ChebyshevCluster{T, N, M})(x::SVector{N, T}) where {T, N, M}
-#     for i in 1:M
-#         if contains(h.series[i], x)
-#             return h.series[i](x)
-#         end
-#     end
-#     throw(DomainError(x))
-# end
-# function (h::ChebyshevCluster{T, N})(x::SVector{N, T}) where {T, N}
-#     return h.series[1](x)
-# end
-# function (h::ChebyshevCluster{T, N})(x::SVector{N, T}) where {T, N}
-#     for i in 1:length(h.series)
-#         if contains(h.series[i], x)
-#             return h.series[i](x)
-#         end
-#     end
-#     throw(DomainError(x))
-# end
 function (h::ChebyshevCluster{T, N})(x::SVector{N, T}) where {T, N}
     i = contains(h, x)
     i == 0 && throw(DomainError(x))

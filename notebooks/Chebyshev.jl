@@ -1,8 +1,50 @@
 module Chebyshev
 
-export AbstractChebyshevSeries, ChebyshevSeries, TransformedChebyshevSeries, ChebyshevCluster, gradient, hessian, contains, normalize
+export AbstractChebyshevSeries, ChebyshevSeries, Transformation, ChebyshevCluster, gradient, hessian, contains, normalize
 
 using StaticArrays
+
+
+struct Transformation{F<:Function, G<:Function, H<:Function}
+    u::F
+    ∇u::G
+    Hu::H
+end
+
+
+function validate_transformation(tf::Transformation, T, N)
+    # Expected types.
+    x_type = SVector{N, T}
+    u_type = SVector{N, T}
+    ∇u_type = SMatrix{N, N, T, N^2}
+    Hu_type = SArray{Tuple{N, N, N}, T, 3, N^3}
+
+    x = zero(x_type)  # test input
+    
+    try
+        u = tf.u(x)
+        ∇u = tf.∇u(x)
+        Hu = tf.Hu(x)
+
+        if !(u isa u_type)
+            error("The transformation function must return a $u_type")
+        end
+
+        if !(∇u isa ∇u_type)
+            error("The gradient of the transformation function must return a $∇u_type")
+        end
+
+        if !(Hu isa Hu_type)
+            error("The hessian of the transformation function must return a $Hu_type")
+        end
+    catch e
+        if e isa MethodError
+            error("The transformation function must accept an argument of type $x_type")
+        else
+            rethrow(e)
+        end
+    end
+end
 
 
 abstract type AbstractChebyshevSeries{T, N} end
@@ -19,10 +61,30 @@ function defined in a bounded domain.
 - `lb::SVector{N, T}`: domain lower bound
 - `ub::SVector{N, T}`: domain upper bound
 """
-struct ChebyshevSeries{T, N} <: AbstractChebyshevSeries{T, N}
+struct ChebyshevSeries{T, N, U<:Transformation} <: AbstractChebyshevSeries{T, N}
     coefs::Array{T, N}
     lb::SVector{N, T}
     ub::SVector{N, T}
+    tf::U
+
+    function ChebyshevSeries(coefs::Array{T, N}, lb::SVector{N, T}, ub::SVector{N, T}, tf::U) where {T, N, U<:Transformation}
+        validate_transformation(tf, T, N)
+        return new{T, N, U}(coefs, lb, ub, tf)
+    end
+end
+
+
+function ChebyshevSeries(coefs::Array{T, 1}, lb::T, ub::T, tf::Transformation) where T
+    return ChebyshevSeries(coefs, SVector{1, T}(lb), SVector{1, T}(ub), tf)
+end
+
+
+function ChebyshevSeries(coefs::Array{T, N}, lb::SVector{N, T}, ub::SVector{N, T}) where {T, N}
+    u(x::SVector{N, T}) = identity(x)
+    ∇u(x::SVector{N, T}) = one(SMatrix{N, N, T, N^2})
+    Hu(x::SVector{N, T}) = zero(SArray{Tuple{N, N, N}, T, 3, N^3})
+    tf = Transformation(u, ∇u, Hu)
+    return ChebyshevSeries(coefs, lb, ub, tf)
 end
 
 
@@ -31,136 +93,36 @@ function ChebyshevSeries(coefs::Array{T, 1}, lb::T, ub::T) where T
 end
 
 
-function ChebyshevSeries(coefs::Array{T, 0}, lb::SVector{0}, ub::SVector{0}) where T
-    return coefs[]
+"""A collection of equidimensional `ChebyshevSeries` objects."""
+struct ChebyshevCluster{T, N, M} <: AbstractChebyshevSeries{T, N}
+    series::NTuple{M, ChebyshevSeries{T, N}}
 end
 
 
-struct TransformedChebyshevSeries{T, N, F<:Function, G<:Function, H<:Function} <: AbstractChebyshevSeries{T, N}
-    series::ChebyshevSeries{T, N}
-    u::F
-    ∇u::G
-    Hu::H
-
-    function TransformedChebyshevSeries(
-        series::ChebyshevSeries{T, N}, u::F, ∇u::G, Hu::H,
-    ) where {T, N, F<:Function, G<:Function, H<:Function}
-        
-        if !all(hasmethod.([u, ∇u, Hu], Tuple{SVector{N, T}}))
-            error("The transformation function must accept an argument of type SVector{$N, $T}")
-        end
-
-        u_return_type = Core.Compiler.return_type(u, Tuple{SVector{N, T}})
-        u_proper_type = SVector{N, T}
-        if !(u_return_type <: u_proper_type)
-            error("The transformation function must return a $u_proper_type")
-        end
-        
-        ∇u_return_type = Core.Compiler.return_type(∇u, Tuple{SVector{N, T}})
-        ∇u_proper_type = SMatrix{N, N, T, N^2}
-        if !(∇u_return_type <: ∇u_proper_type)
-            error("The gradient of the transformation function must return a $∇u_proper_type")
-        end
-
-        Hu_return_type = Core.Compiler.return_type(Hu, Tuple{SVector{N, T}})
-        Hu_proper_type = SArray{Tuple{N, N, N}, T, 3, N^3}
-        if !(Hu_return_type <: Hu_proper_type)
-            error("The hessian of the transformation function must return a $Hu_proper_type")
-        end
-
-        return new{T, N, F, G, H}(series, u, ∇u, Hu)
-    end
+function ChebyshevCluster(series::AbstractChebyshevSeries{T, N}...) where {T, N}
+    M = length(series)
+    return ChebyshevCluster{T, N, M}(series)
 end
-
-
-"""A collection of equidimensional `AbstractChebyshevSeries` objects."""
-# struct ChebyshevCluster{T, N, M} <: AbstractChebyshevSeries{T, N}
-#     series::NTuple{M, AbstractChebyshevSeries{T, N}}
-# end
-# struct ChebyshevCluster{T, N, M, S <: NTuple{M, AbstractChebyshevSeries{T, N}}} <: AbstractChebyshevSeries{T, N}  # Works
-#     series::S
-# end
-# struct ChebyshevCluster{T, N, S <: Tuple} <: AbstractChebyshevSeries{T, N}  # Doesn't work
-#     series::S
-# end
-struct ChebyshevCluster{T, N, S <: Tuple{Vararg{AbstractChebyshevSeries{T, N}}}} <: AbstractChebyshevSeries{T, N}  # Works
-    series::S
-end
-# struct ChebyshevCluster{T, N, M, S <: AbstractChebyshevSeries{T, N}} <: AbstractChebyshevSeries{T, N}  # Doesn't work
-#     series::NTuple{M, S}
-# end
-# struct ChebyshevCluster{T, N, M} <: AbstractChebyshevSeries{T, N}  # Doesn't solve the issue
-#     series::NTuple{M, Union{ChebyshevSeries{T, N}, TransformedChebyshevSeries{T, N}}}
-# end
-
-
-# function ChebyshevCluster(series::AbstractChebyshevSeries{T, N}...) where {T, N}
-#     M = length(series)
-#     return ChebyshevCluster{T, N, M}(series)
-# end
-function ChebyshevCluster(series::AbstractChebyshevSeries{T, N}...) where {T, N}  # Works
-    S = typeof(series)
-    return ChebyshevCluster{T, N, S}(series)
-end
-# function ChebyshevCluster(series::S...) where {T, N, S <: AbstractChebyshevSeries{T, N}}  # Doesn't work
-#     return ChebyshevCluster{T, N, Tuple{Vararg{S}}}(series)
-# end
 
 
 """Converts a point `x` to its normalized coordinates in ``[-1, 1]^N``."""
 function normalize(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    @. (2x - f.lb - f.ub) / (f.ub - f.lb)
-end
-
-
-function normalize(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    return normalize(g.series, g.u(x))
+    u = f.tf.u(x)
+    @. (2u - f.lb - f.ub) / (f.ub - f.lb)
 end
 
 
 """Checks if the point `x` is in the domain of `f`."""
 function contains(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    return all(f.lb .≤ x .≤ f.ub)
+    u = f.tf.u(x)
+    return all(f.lb .≤ u .≤ f.ub)
 end
 
 
-function contains(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    return contains(g.series, g.u(x))
-end
-
-
-# function contains(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N}
-#     for i in 1:length(h.series)
-#         if contains(h.series[i], x)
-#             return i
-#         end
-#     end
-#     return 0
-# end
-# function contains(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N}
-#     checks = ntuple(i -> contains(h.series[i], x), length(h.series))
-    
-#     for i in 1:length(checks)
-#         if checks[i]
-#             return i
-#         end
-#     end
-
-#     return 0
-# end
-# function contains(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N}
-#     checks = ntuple(i -> contains(h.series[i], x), length(h.series))
-#     idx = findfirst(checks) 
-#     return isnothing(idx) ? 0 : idx
-# end
 function contains(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N}
     i = findfirst(s -> contains(s, x), h.series)
     return something(i, 0)
 end
-
-# function _evaluate_series(s::AbstractChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-#     return s(x)
-# end
 
 
 include("clenshaw.jl")

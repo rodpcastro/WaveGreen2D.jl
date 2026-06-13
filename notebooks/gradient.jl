@@ -13,8 +13,7 @@ with respect to the `N`-th dimension at a value `x` of its `N`-th dimension.
 - `ChebyshevSeries{T, N-1}`: partial derivative of `f` with
   respect to the `N`-th dimension evaluated at `x`
 """
-function gradient_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
-    a = f.coefs
+function gradient_clenshaw(a::Array{T, N}, x::T) where {T, N}
     n = size(a, N)
     dx = 2x
 
@@ -47,26 +46,21 @@ function gradient_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
     aₖ = selectdim(a, N, 1)
     @. bₖ = aₖ + x*bₖ₊₁ - bₖ
     @. cₖ = bₖ₊₁ + x*cₖ₊₁ - cₖ
-
-    lbc = SVector(ntuple(i -> f.lb[i], Val(N-1)))
-    ubc = SVector(ntuple(i -> f.ub[i], Val(N-1)))
     
-    fc = ChebyshevSeries(bₖ, lbc, ubc)
-    gc = ChebyshevSeries(cₖ, lbc, ubc)
-    
-    return fc, gc
+    return bₖ, cₖ
 end
 
 
-function gradient_clenshaw(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    fc, gc = gradient_clenshaw(f, x[N])
-    xc = SVector(ntuple(i -> x[i], Val(N-1)))
-    return gradient_clenshaw(fc, xc)..., clenshaw(gc, xc)
+function gradient_clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N}
+    b, c = gradient_clenshaw(a, x[N])
+    xᴺ⁻¹ = pop(x)
+    return gradient_clenshaw(b, xᴺ⁻¹)..., clenshaw(c, xᴺ⁻¹)
 end
 
 
-function gradient_clenshaw(f::ChebyshevSeries{T, 1}, x::SVector{1, T}) where T
-    return gradient_clenshaw(f, x[])
+function gradient_clenshaw(a::Array{T, 1}, x::SVector{1, T}) where T
+    b, c = gradient_clenshaw(a, x[1])
+    return b[], c[]
 end
 
 
@@ -86,18 +80,12 @@ function gradient(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
     x̄ = normalize(f, x)
     dx̄_dx = @. 2.0 / (f.ub - f.lb)
     
-    res = gradient_clenshaw(f, x̄)
+    res = gradient_clenshaw(f.coefs, x̄)
     
     y = res[1]
-    ∇y = SVector{N, T}(ntuple(i -> res[i+1], Val(N))) .* dx̄_dx
-    
-    return y, ∇y
-end
+    ∇ᵤy = SVector{N, T}(ntuple(i -> res[i+1], Val(N))) .* dx̄_dx
 
-
-function gradient(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    y, ∇ᵤy = gradient(g.series, g.u(x))
-    ∇ₓu = g.∇u(x)
+    ∇ₓu = f.tf.∇u(x)
     
     # ∂y/∂x = ∂y/∂u ⋅ ∂u/∂x
     ∇y = ∇ₓu' * ∇ᵤy
