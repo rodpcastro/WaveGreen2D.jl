@@ -1,23 +1,10 @@
 """
-    hessian_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N} -> ChebyshevSeries{T, N-1}
+    hessian_clenshaw(a::Array{T, N}, x::T) where {T, N} -> Array{T, N-1}, Array{T, N-1}, Array{T, N-1}
 
-Implements the Clenshaw algorithm to evaluate the series `f` and its first and second
-order partial derivatives with respect to the `N`-th dimension at a value `x` of its
-`N`-th dimension.
-
-# Arguments
-- `f::ChebyshevSeries{T, N}`: `N`-dimensional series to be evaluated
-- `x::T`: Value of the `N`-th coordinate in the domain [-1, 1]
-
-# Returns
-- `ChebyshevSeries{T, N-1}`: `f` evaluated at `x`
-- `ChebyshevSeries{T, N-1}`: partial derivative of `f` with
-  respect to the `N`-th dimension evaluated at `x`
-- `ChebyshevSeries{T, N-1}`: second-order partial derivative of `f` with
-  respect to the `N`-th dimension evaluated at `x`
+Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev series with 
+coefficients `a`, its gradient and hessian at a normalized value `x` of its `N`-th dimension.
 """
-function hessian_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
-    a = f.coefs
+function hessian_clenshaw(a::Array{T, N}, x::T) where {T, N}
     n = size(a, N)
     dx = 2x
 
@@ -64,32 +51,34 @@ function hessian_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
     @. bₖ = aₖ + x*bₖ₊₁ - bₖ
     @. cₖ = bₖ₊₁ + x*cₖ₊₁ - cₖ
     @. dₖ = 2.0*(cₖ₊₁ + x*dₖ₊₁ - dₖ)
-
-    lbc = SVector(ntuple(i -> f.lb[i], Val(N-1)))
-    ubc = SVector(ntuple(i -> f.ub[i], Val(N-1)))
     
-    fc = ChebyshevSeries(bₖ, lbc, ubc)
-    gc = ChebyshevSeries(cₖ, lbc, ubc)
-    hc = ChebyshevSeries(dₖ, lbc, ubc)
-    
-    return fc, gc, hc
-end
-
-
-function hessian_clenshaw(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    fc, gc, hc = hessian_clenshaw(f, x[N])
-    xc = SVector(ntuple(i -> x[i], Val(N-1)))
-    return hessian_clenshaw(fc, xc)..., gradient_clenshaw(gc, xc)..., clenshaw(hc, xc)
-end
-
-
-function hessian_clenshaw(f::ChebyshevSeries{T, 1}, x::SVector{1, T}) where T
-    return hessian_clenshaw(f, x[])
+    return bₖ, cₖ, dₖ
 end
 
 
 """
-Converts a vector of `K` values representing the upper triangular matrix of
+    hessian_clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}, SMatrix{N, N, T}
+
+Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev series with 
+coefficients `a`, its gradient and hessian at a normalized point `x` in ``[-1, 1]^N``.
+"""
+function hessian_clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N}
+    b, c, d = hessian_clenshaw(a, x[N])
+    xᴺ⁻¹ = pop(x)
+    return hessian_clenshaw(b, xᴺ⁻¹)..., gradient_clenshaw(c, xᴺ⁻¹)..., clenshaw(d, xᴺ⁻¹)
+end
+
+
+function hessian_clenshaw(a::Array{T, 1}, x::SVector{1, T}) where T
+    b, c, d = hessian_clenshaw(a, x[1])
+    return b[], c[], d[]
+end
+
+
+"""
+    symmatrix(u::SVector{K, T}, ::Val{N}) where {T, N, K} -> SMatrix{N, N, T}
+
+Converts a vector of `K` values representing the upper triangular matrix of 
 order `N`, stored in column-major order, into a symmetric matrix of order `N`.
 It's necessary that `K = N*(N+1)÷2`.
 """
@@ -113,15 +102,7 @@ end
 """
     hessian(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}, SMatrix{N, N, T}
 
-Evaluates the series `f`, its gradient and hessian at a point `x`.
-
-# Arguments
-- `x::SVector{N, T}`: evaluation point
-
-# Returns
-- `T`: `f` evaluated at `x`
-- `SVector{N, T}`: gradient of `f` evaluated at `x`
-- `SMatrix{N, N, T}`: hessian of `f` evaluated at `x`
+Evaluates the Chebyshev series `f`, its gradient and hessian at a point `x`.
 """
 function hessian(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
     x̄ = normalize(f, x)
@@ -130,7 +111,7 @@ function hessian(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
     gidx = [i*(i+1)÷2 + 1 for i in 1:N]
     hidx = [i*(i+1)÷2 + 1 + j for i in 1:N for j in 1:i]
 
-    res = hessian_clenshaw(f, x̄)
+    res = hessian_clenshaw(f.coefs, x̄)
     
     y = res[1]
     ∇y = SVector{N, T}(ntuple(i -> res[gidx[i]], Val(N))) .* dx̄_dx
@@ -141,23 +122,57 @@ function hessian(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
 end
 
 
-function hessian(f::ChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N}
+"""
+    hessian(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}, SMatrix{N, N, T}
+
+Evaluates the transformed Chebyshev series `g`, its gradient and hessian at a point `x`.
+"""
+function hessian(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+    y, ∇ᵤy, Hᵤy = hessian(g.series, g.u(x))
+    
+    ∇ₓu = g.∇u(x)
+    Hₓu = g.Hu(x)
+    
+    # ∂y/∂x = ∂y/∂u ⋅ ∂u/∂x
+    ∇y = ∇ₓu' * ∇ᵤy
+    
+    # ∂²y/∂x² = ∂y/∂u ⋅ ∂²u/∂x² + ∂²y/∂u² ⋅ (∂u/∂x)²
+    Hy = (reshape(reshape(Hₓu, Size(N, N^2))' * ∇ᵤy, Size(N, N)))' + ∇ₓu' * Hᵤy * ∇ₓu
+    
+    return y, ∇y, Hy
+end
+
+
+"""
+    hessian(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}, SMatrix{N, N, T}
+
+Evaluates the Chebyshev cluster `h`, its gradient and hessian at a point `x`.
+"""
+function hessian(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N}
+    i = contains(h, x)
+    i == 0 && throw(DomainError(x))
+    return hessian(h.series[i], x)
+end
+
+
+"""
+    hessian(f::AbstractChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N} -> T, SVector{N, T}, SMatrix{N, N, T}
+
+Simpler function for evaluating a Chebyshev series `f`, its gradient and 
+hessian at a point `x`, where `x` is of any subtype of an `AbstractVector{T}`.
+"""
+function hessian(f::AbstractChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N}
     return hessian(f, SVector{N, T}(x))
 end
 
 
-function hessian(f::ChebyshevSeries{T, 1}, x::T) where T
-    res = hessian(f, SVector{1, T}(x))
-    return res[1][], res[2][], res[3][]
-end
+"""
+    hessian(f::AbstractChebyshevSeries{T, 1}, x::T) where T -> T, T, T
 
-
-function hessian(g::ChebyshevCluster{T, N, M}, x::Union{AbstractVector{T}, T}) where {T, N, M}
-    x_in_g, i = contains(g, x)
-    
-    if x_in_g
-        return hessian(g.series[i], x)
-    else
-        throw(DomainError(x))
-    end
+Simpler function for evaluating a one-dimensional Chebyshev series `f`, 
+its gradient and hessian at a point `x`, where `x` is of type `T`.
+"""
+function hessian(f::AbstractChebyshevSeries{T, 1}, x::T) where T
+    y, ∇y, Hy = hessian(f, SVector{1, T}(x))
+    return y, ∇y[], Hy[]
 end

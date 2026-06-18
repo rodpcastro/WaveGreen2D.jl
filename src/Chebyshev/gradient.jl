@@ -1,20 +1,10 @@
 """
-    gradient_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N} -> ChebyshevSeries{T, N-1}
+    gradient_clenshaw(a::Array{T, N}, x::T) where {T, N} -> Array{T, N-1}, Array{T, N-1}
 
-Implements the Clenshaw algorithm to evaluate the series `f` and its partial derivative
-with respect to the `N`-th dimension at a value `x` of its `N`-th dimension.
-
-# Arguments
-- `f::ChebyshevSeries{T, N}`: `N`-dimensional series to be evaluated
-- `x::T`: Value of the `N`-th coordinate in the domain [-1, 1]
-
-# Returns
-- `ChebyshevSeries{T, N-1}`: `f` evaluated at `x`
-- `ChebyshevSeries{T, N-1}`: partial derivative of `f` with
-  respect to the `N`-th dimension evaluated at `x`
+Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev series 
+with coefficients `a` and its gradient at a normalized value `x` of its `N`-th dimension.
 """
-function gradient_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
-    a = f.coefs
+function gradient_clenshaw(a::Array{T, N}, x::T) where {T, N}
     n = size(a, N)
     dx = 2x
 
@@ -47,46 +37,40 @@ function gradient_clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N}
     aₖ = selectdim(a, N, 1)
     @. bₖ = aₖ + x*bₖ₊₁ - bₖ
     @. cₖ = bₖ₊₁ + x*cₖ₊₁ - cₖ
-
-    lbc = SVector(ntuple(i -> f.lb[i], Val(N-1)))
-    ubc = SVector(ntuple(i -> f.ub[i], Val(N-1)))
     
-    fc = ChebyshevSeries(bₖ, lbc, ubc)
-    gc = ChebyshevSeries(cₖ, lbc, ubc)
-    
-    return fc, gc
+    return bₖ, cₖ
 end
 
 
-function gradient_clenshaw(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
-    fc, gc = gradient_clenshaw(f, x[N])
-    xc = SVector(ntuple(i -> x[i], Val(N-1)))
-    return gradient_clenshaw(fc, xc)..., clenshaw(gc, xc)
+"""
+    gradient_clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}
+
+Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev series 
+with coefficients `a` and its gradient at a normalized point `x` in ``[-1, 1]^N``.
+"""
+function gradient_clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N}
+    b, c = gradient_clenshaw(a, x[N])
+    xᴺ⁻¹ = pop(x)
+    return gradient_clenshaw(b, xᴺ⁻¹)..., clenshaw(c, xᴺ⁻¹)
 end
 
 
-function gradient_clenshaw(f::ChebyshevSeries{T, 1}, x::SVector{1, T}) where T
-    return gradient_clenshaw(f, x[])
+function gradient_clenshaw(a::Array{T, 1}, x::SVector{1, T}) where T
+    b, c = gradient_clenshaw(a, x[1])
+    return b[], c[]
 end
 
 
 """
     gradient(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}
 
-Evaluates the series `f` and its gradient at a point `x`.
-
-# Arguments
-- `x::SVector{N, T}`: evaluation point
-
-# Returns
-- `T`: `f` evaluated at `x`
-- `SVector{N, T}`: gradient of `f` evaluated at `x`
+Evaluates the Chebyshev series `f` and its gradient at a point `x`.
 """
 function gradient(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
     x̄ = normalize(f, x)
     dx̄_dx = @. 2.0 / (f.ub - f.lb)
     
-    res = gradient_clenshaw(f, x̄)
+    res = gradient_clenshaw(f.coefs, x̄)
     
     y = res[1]
     ∇y = SVector{N, T}(ntuple(i -> res[i+1], Val(N))) .* dx̄_dx
@@ -95,23 +79,53 @@ function gradient(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
 end
 
 
-function gradient(f::ChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N}
+"""
+    gradient(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}
+
+Evaluates the transformed Chebyshev series `g` and its gradient at a point `x`.
+"""
+function gradient(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+    y, ∇ᵤy = gradient(g.series, g.u(x))
+
+    ∇ₓu = g.∇u(x)
+    
+    # ∂y/∂x = ∂y/∂u ⋅ ∂u/∂x
+    ∇y = ∇ₓu' * ∇ᵤy
+    
+    return y, ∇y
+end
+
+
+"""
+    gradient(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N} -> T, SVector{N, T}
+
+Evaluates the Chebyshev cluster `h` and its gradient at a point `x`.
+"""
+function gradient(h::ChebyshevCluster{T, N}, x::SVector{N, T}) where {T, N}
+    i = contains(h, x)
+    i == 0 && throw(DomainError(x))
+    return gradient(h.series[i], x)
+end
+
+
+"""
+    gradient(f::AbstractChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N} -> T, SVector{N, T}
+
+Simpler function for evaluating a Chebyshev series `f` and its gradient 
+at a point `x`, where `x` is of any subtype of an `AbstractVector{T}`.
+"""
+function gradient(f::AbstractChebyshevSeries{T, N}, x::AbstractVector{T}) where {T, N}
     return gradient(f, SVector{N, T}(x))
 end
 
 
-function gradient(f::ChebyshevSeries{T, 1}, x::T) where T
-    res = gradient(f, SVector{1, T}(x))
-    return res[1][], res[2][]
-end
+"""
+    gradient(f::AbstractChebyshevSeries{T, 1}, x::T) where T -> T, T
 
-
-function gradient(g::ChebyshevCluster{T, N, M}, x::Union{AbstractVector{T}, T}) where {T, N, M}
-    x_in_g, i = contains(g, x)
-    
-    if x_in_g
-        return gradient(g.series[i], x)
-    else
-        throw(DomainError(x))
-    end
+Simpler function for evaluating a one-dimensional Chebyshev series 
+`f` and its gradient at a point `x`, where `x` is of type `T`.
+"""
+function gradient(f::AbstractChebyshevSeries{T, 1}, x::T) where T
+    y, ∇y = gradient(f, SVector{1, T}(x))
+    return y, ∇y[]
 end
