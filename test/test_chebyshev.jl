@@ -12,46 +12,46 @@ using WaveGreen2D.Chebyshev: normalize, contains, clenshaw, gradient_clenshaw, h
 
 @testset "0-D Chebyshev series" begin
     coefs = Array{Float64,0}(undef)
-    cs = ChebyshevSeries(coefs, SVector{0}(), SVector{0}())
+    cs = ChebyshevSeries(coefs, SVector{0,Float64}(), SVector{0,Float64}())
     @test cs == coefs[]
 end
 
 
 @testset "1-D normalize" begin
     cs = ChebyshevSeries(zeros(2), SA[2.0], SA[5.0])
-    @test normalize(cs, 2.0) == -1
-    @test normalize(cs, 3.5) == 0
-    @test normalize(cs, 5.0) == 1
+    @test normalize(cs, SA[2.0]) == SA[-1]
+    @test normalize(cs, SA[3.5]) == SA[0]
+    @test normalize(cs, SA[5.0]) == SA[1]
 end
 
 
 @testset "2-D normalize" begin
     cs = ChebyshevSeries(zeros(2, 2), SA[-5.0, 8.0], SA[0.0, 20.0])
-    @test normalize(cs, SA[-5.0, 8.0]) == [-1, -1]
-    @test normalize(cs, SA[-1.25, 11.0]) == [0.5, -0.5]
-    @test normalize(cs, SA[0.0, 20.0]) == [1, 1]
+    @test normalize(cs, SA[-5.0, 8.0]) == SA[-1, -1]
+    @test normalize(cs, SA[-1.25, 11.0]) == SA[0.5, -0.5]
+    @test normalize(cs, SA[0.0, 20.0]) == SA[1, 1]
 end
 
 
 @testset "3-D normalize" begin
     cs = ChebyshevSeries(zeros(2, 2, 2), SA[-2.0, 3.0, 0.0], SA[-1.0, 5.0, 2.0])
-    @test normalize(cs, SA[-2.0, 3.0, 0.0]) == [-1, -1, -1]
-    @test normalize(cs, SA[-1.75, 4.0, 1.5]) == [-0.5, 0.0, 0.5]
-    @test normalize(cs, SA[-1.0, 5.0, 2.0]) == [1, 1, 1]
+    @test normalize(cs, SA[-2.0, 3.0, 0.0]) == SA[-1, -1, -1]
+    @test normalize(cs, SA[-1.75, 4.0, 1.5]) == SA[-0.5, 0.0, 0.5]
+    @test normalize(cs, SA[-1.0, 5.0, 2.0]) == SA[1, 1, 1]
 end
 
 
 @testset "1-D contains" begin
     cs = ChebyshevSeries(zeros(2), SA[-2.0], SA[4.0])
-    @test contains(cs, 2.0)
-    @test !contains(cs, 4.1)
+    @test contains(cs, SA[2.0])
+    @test !contains(cs, SA[4.1])
 end
 
 
 @testset "2-D contains" begin
     cs = ChebyshevSeries(zeros(2, 2), SA[5.0, -3.5], SA[6.0, 0.5])
     @test contains(cs, SA[5.1, -1.5])
-    @test contains(cs, [5.5, -3.0])
+    @test contains(cs, SA[5.5, -3.0])
     @test !contains(cs, SA[4.9, 0.0])
 end
 
@@ -59,7 +59,7 @@ end
 @testset "3-D contains" begin
     cs = ChebyshevSeries(zeros(2, 2, 2), SA[0.5, -1.2, 3.0], SA[1.5, 0.3, 3.5])
     @test contains(cs, SA[1.0, 0.0, 3.2])
-    @test contains(cs, [1.4, 0.2, 3.1])
+    @test contains(cs, SA[1.4, 0.2, 3.1])
     @test !contains(cs, SA[0.5, 0.3, 3.55])
 end
 
@@ -69,45 +69,40 @@ end
     cs2 = ChebyshevSeries(zeros(2), SA[1.0], SA[2.0])
     cc = ChebyshevCluster(cs1, cs2)
 
-    check_in1, i1 = contains(cc, 0.5)
-    check_in2, i2 = contains(cc, 1.5)
-    check_in3, _ = contains(cc, 3.0)
+    i1 = contains(cc, SA[0.5])
+    i2 = contains(cc, SA[1.5])
+    i3 = contains(cc, SA[3.0])
 
-    @test check_in1
     @test i1 == 1
-    @test check_in2
     @test i2 == 2
-    @test !check_in3
+    @test i3 == 0
 end
 
 
 @testset "1-D polynomial function" begin
-    coefs = collect(UnitRange(1.0, 6.0))
-    cs = ChebyshevSeries(coefs, SA[-1.0], SA[1.0])
-    x = 0.5
-    @test clenshaw(cs, x) == -3
-    @test gradient_clenshaw(cs, x) == (-3, -42)
-    @test hessian_clenshaw(cs, x) == (-3, -42, -20)
+    a = collect(UnitRange(1.0, 6.0))
+    x = SA[0.5]
+    @test clenshaw(a, x) == -3
+    @test gradient_clenshaw(a, x) == (-3, -42)
+    @test hessian_clenshaw(a, x) == (-3, -42, -20)
 end
 
 
 @testset "2-D polynomial function" begin
-    coefs = Float64[3 * i * (j + 1) for i in 1:6, j in 1:5]
-    cs = ChebyshevSeries(coefs, SA[-1.0, -1.0], SA[1.0, 1.0])
+    a = Float64[3 * i * (j + 1) for i in 1:6, j in 1:5]
     x = SA[-0.5, 0.5]
-    @test clenshaw(cs, x) == 58.5
-    @test gradient_clenshaw(cs, x) == (58.5, 273, 117)
-    @test hessian_clenshaw(cs, x) == (58.5, 273, -2418, 117, 546, -1116)
+    @test clenshaw(a, x) == 58.5
+    @test gradient_clenshaw(a, x) == (58.5, 273, 117)
+    @test hessian_clenshaw(a, x) == (58.5, 273, -2418, 117, 546, -1116)
 end
 
 
 @testset "3-D polynomial function" begin
-    coefs = Float64[0.25 * (i - 1) * (j + 1) * (k + 3) for i in 0:6, j in 0:4, k in 0:5]
-    cs = ChebyshevSeries(coefs, SA[-1.0, -1.0, -1.0], SA[1.0, 1.0, 1.0])
+    a = Float64[0.25 * (i - 1) * (j + 1) * (k + 3) for i in 0:6, j in 0:4, k in 0:5]
     x = SA[-0.5, 0.5, -0.5]
-    @test clenshaw(cs, x) == 9
-    @test gradient_clenshaw(cs, x) == (9, -45, 18, 54)
-    @test hessian_clenshaw(cs, x) == (9, -45, -702, 18, -90, -150, 54, -270, 108, -492)
+    @test clenshaw(a, x) == 9
+    @test gradient_clenshaw(a, x) == (9, -45, 18, 54)
+    @test hessian_clenshaw(a, x) == (9, -45, -702, 18, -90, -150, 54, -270, 108, -492)
 end
 
 
