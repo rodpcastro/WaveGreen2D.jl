@@ -1,8 +1,15 @@
 """
-    clenshaw(a::Array{T, N}, x::T) where {T, N} -> Array{T, N-1}
+    clenshaw(f::ChebyshevSeries{T, N}, x::T) where {T, N} -> ChebyshevSeries{T, N-1}
 
-Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev 
-series with coefficients `a` at a normalized value `x` of its `N`-th dimension.
+Implements the Clenshaw algorithm to evaluate the
+series `f` at a value `x` of its `N`-th dimension.
+
+# Arguments
+- `f::ChebyshevSeries{T, N}`: `N`-dimensional series to be evaluated
+- `x::T`: Value of the `N`-th coordinate in the domain [-1, 1]
+
+# Returns
+- `ChebyshevSeries{T, N-1}`: `f` evaluated at `x`
 """
 function clenshaw(a::Array{T, N}, x::T) where {T, N}
     n = size(a, N)
@@ -32,12 +39,6 @@ function clenshaw(a::Array{T, N}, x::T) where {T, N}
 end
 
 
-"""
-    clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N} -> T
-
-Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev 
-series with coefficients `a` at a normalized point `x` in ``[-1, 1]^N``.
-"""
 function clenshaw(a::Array{T, N}, x::SVector{N, T}) where {T, N}
     b = clenshaw(a, x[N])
     xᴺ⁻¹ = pop(x)
@@ -54,7 +55,13 @@ end
 """
     (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N} -> T
 
-Evaluates the Chebyshev series `f` at a point `x`.
+Evaluates the series `f` at a point `x`.
+
+# Arguments
+- `x::SVector{N, T}`: evaluation point
+
+# Returns
+- `T`: `f` evaluated at `x`
 """
 function (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N}
     x̄ = normalize(f, x)
@@ -63,46 +70,29 @@ function (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N}
 end
 
 
-"""
-    (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N} -> T
-
-Evaluates the transformed Chebyshev series `g` at a point `x`, which 
-is equivalent to evaluating `g.series` at the point `g.u(x)`.
-"""
 function (g::TransformedChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N}
-    return g.series(g.u(x))
+    return g.series(g.tf.u(x))
 end
 
 
-"""
-    (h::ChebyshevCluster{T, N})(x::SVector{N, T}) where {T, N} -> T
-
-Evaluates the Chebyshev cluster `h` at a point `x`.
-"""
 function (h::ChebyshevCluster{T, N})(x::SVector{N, T}) where {T, N}
     i = contains(h, x)
     i == 0 && throw(DomainError(x))
-    return h.series[i](x)
+    # return h.series[i](x)
+    return evaluate(h.series[i], x)
 end
 
 
-"""
-    (f::AbstractChebyshevSeries{T, N})(x::AbstractVector{T}) where {T, N} -> T
+function evaluate(f::AbstractChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+    return f(x)
+end
 
-Simpler callable constructor for evaluating a Chebyshev series `f` 
-at a point `x`, where `x` is of any subtype of an `AbstractVector{T}`.
-"""
+
 function (f::AbstractChebyshevSeries{T, N})(x::AbstractVector{T}) where {T, N}
     return f(SVector{N, T}(x))
 end
 
 
-"""
-    (f::AbstractChebyshevSeries{T, 1})(x::T) where T -> T
-
-Simpler callable constructor for evaluating a one-dimensional 
-Chebyshev series `f` at a point `x`, where `x` is of type `T`.
-"""
 function (f::AbstractChebyshevSeries{T, 1})(x::T) where T
     return f(SVector{1, T}(x))
 end
