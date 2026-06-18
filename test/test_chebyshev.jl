@@ -107,9 +107,9 @@ end
 
 
 @testset "1-D transcendental function" begin
-    # f(x) = sin(x) in [0.0, π/2]
-    @load "test_chebyshev_1dtf.jld2" coefs
-    cs = ChebyshevSeries(coefs, SA[0.0], SA[0.5*π])
+    # f(x) = sin(x), x ∈ [0.0, π/2]
+    @load "coefs/test_chebyshev_1dtf.jld2" coefs
+    cs = ChebyshevSeries(coefs, 0.0, 0.5 * π)
     x = π / 3
 
     @test cs(x) ≈ sin(x)
@@ -126,8 +126,8 @@ end
 
 
 @testset "2-D transcendental function" begin
-    # f(x) = cos(x*y/4) in [-0.05, 0.15]×[0.2, 0.4]
-    @load "test_chebyshev_2dtf.jld2" coefs
+    # f(x) = cos(x*y/4), x ∈ [-0.05, 0.15]×[0.2, 0.4]
+    @load "coefs/test_chebyshev_2dtf.jld2" coefs
     cs = ChebyshevSeries(coefs, SA[-0.05, 0.2], SA[0.15, 0.4])
     x̄ = [0.1, 0.3]
     x, y = x̄
@@ -160,8 +160,8 @@ end
 
 
 @testset "3-D transcendental function" begin
-    # f(x) = exp(x*y) * cos(x + z/2) in [0.5, 0.7]×[-0.2, 0.0]×[1.0, 1.2]
-    @load "test_chebyshev_3dtf.jld2" coefs
+    # f(x) = exp(x*y) * cos(x + z/2), x ∈ [0.5, 0.7]×[-0.2, 0.0]×[1.0, 1.2]
+    @load "coefs/test_chebyshev_3dtf.jld2" coefs
     cs = ChebyshevSeries(coefs, SA[0.5, -0.2, 1.0], SA[0.7, 0.0, 1.2])
     x̄ = [0.57, -0.02, 1.13]
     x, y, z = x̄
@@ -206,9 +206,330 @@ end
 end
 
 
+@testset "1-D transformed series" begin
+    # f(u) = sin(u²), u(x) = √x, x ∈ [0.0, 0.5*π]
+    @load "coefs/test_chebyshev_1dts.jld2" coefs #lb ub
+
+    lb, ub = 0.0, sqrt(0.5 * π)
+
+    u(x::SVector{1,Float64}) = x .^ 0.5
+    ∇u(x::SVector{1,Float64}) = reshape(0.5 * x .^ -0.5, Size(1, 1))
+    Hu(x::SVector{1,Float64}) = reshape(-0.25 * x .^ -1.5, Size(1, 1, 1))
+
+    cs = ChebyshevSeries(coefs, lb, ub)
+    ts = TransformedChebyshevSeries(cs, u, ∇u, Hu)
+
+    x₀ = 0.71
+
+    f₀ = sin(x₀)
+    ∇f₀ = cos(x₀)
+    Hf₀ = -sin(x₀)
+
+    @test ts(x₀) ≈ f₀
+
+    y₀, ∇y₀ = gradient(ts, x₀)
+    @test y₀ ≈ f₀
+    @test ∇y₀ ≈ ∇f₀
+
+    y₀, ∇y₀, Hy₀ = hessian(ts, x₀)
+    @test y₀ ≈ f₀
+    @test ∇y₀ ≈ ∇f₀
+    @test Hy₀ ≈ Hf₀
+end
+
+
+@testset "2-D transformed series" begin
+    # f(u) = f(r, θ) = exp(r*cos(θ)) * cos(r*sin(θ))
+    # u(x) = u(ξ, η) = (r=√(ξ² + η²), θ=atan(η/ξ))
+    # u ∈ [0.1, 2.0]×[-0.2*π, 0.4*π]
+    @load "coefs/test_chebyshev_2dts.jld2" coefs #lb ub
+
+    lb, ub = SA[0.1, -0.2*π], SA[2.0, 0.4*π]
+
+    function u(x::SVector{2,Float64})
+        ξ, η = x
+
+        r = sqrt(ξ^2 + η^2)
+        θ = atan(η / ξ)
+
+        return SA[r, θ]
+    end
+
+    function ∇u(x::SVector{2,Float64})
+        ξ, η = x
+
+        r² = ξ^2 + η^2
+        r = √r²
+
+        r₁ = ξ / r
+        r₂ = η / r
+        θ₁ = -η / r²
+        θ₂ = ξ / r²
+
+        ∇u₁ = SA[r₁, r₂]
+        ∇u₂ = SA[θ₁, θ₂]
+
+        return vcat(∇u₁', ∇u₂')
+    end
+
+    function Hu(x::SVector{2,Float64})
+        ξ, η = x
+
+        ξ², η² = ξ^2, η^2
+
+        r² = ξ² + η²
+        r = √r²
+        r³ = r² * r
+        r⁴ = r³ * r
+
+        r₁₁ = η² / r³
+        r₁₂ = -ξ * η / r³
+        r₂₁ = r₁₂
+        r₂₂ = ξ² / r³
+
+        θ₁₁ = 2 * ξ * η / r⁴
+        θ₁₂ = (η² - ξ²) / r⁴
+        θ₂₁ = θ₁₂
+        θ₂₂ = -2 * ξ * η / r⁴
+
+        Hu₁ = reshape([r₁₁ r₁₂;
+                r₂₁ r₂₂], 1, 2, 2)
+
+        Hu₂ = reshape([θ₁₁ θ₁₂;
+                θ₂₁ θ₂₂], 1, 2, 2)
+
+        hess_u = vcat(Hu₁, Hu₂)
+
+        return SArray{Tuple{2,2,2},Float64}(hess_u)
+    end
+
+    cs = ChebyshevSeries(coefs, lb, ub)
+    ts = TransformedChebyshevSeries(cs, u, ∇u, Hu)
+
+    function f(x::SVector{2,Float64})
+        ξ, η = x
+        return exp(ξ) * cos(η)
+    end
+
+    function ∇f(x::SVector{2,Float64})
+        ξ, η = x
+
+        f₁ = exp(ξ) * cos(η)
+        f₂ = -exp(ξ) * sin(η)
+
+        return SA[f₁, f₂]
+    end
+
+    function Hf(x::SVector{2,Float64})
+        ξ, η = x
+
+        f₁₁ = exp(ξ) * cos(η)
+        f₁₂ = -exp(ξ) * sin(η)
+        f₂₁ = f₁₂
+        f₂₂ = -exp(ξ) * cos(η)
+
+        return SA[
+            f₁₁ f₁₂;
+            f₂₁ f₂₂
+        ]
+    end
+
+    x₀ = SA[0.087, 0.110]
+
+    f₀ = f(x₀)
+    ∇f₀ = ∇f(x₀)
+    Hf₀ = Hf(x₀)
+
+    @test ts(x₀) ≈ f₀
+
+    y₀, ∇y₀ = gradient(ts, x₀)
+    @test y₀ ≈ f₀
+    @test ∇y₀ ≈ ∇f₀
+
+    y₀, ∇y₀, Hy₀ = hessian(ts, x₀)
+    @test y₀ ≈ f₀
+    @test ∇y₀ ≈ ∇f₀
+    @test Hy₀ ≈ Hf₀
+end
+
+
+@testset "3-D transformed series" begin
+    # f(u) = f(r, θ, ϕ) = r² * sin(ϕ) * cos(θ) * cos(ϕ) * exp(-r²)
+    # u(x) = u(ξ, η, ζ) = (r=√(ξ² + η² + ζ²), θ=atan(η/ξ), ϕ=acos(ζ/r))
+    # u ∈ [0.1, 2.2]×[0.2, 1.8]×[0.3, 1.6]
+    @load "coefs/test_chebyshev_3dts.jld2" coefs #lb ub
+
+    lb, ub = SA[0.1, 0.2, 0.3], SA[2.2, 1.8, 1.6]
+
+    function u(x::SVector{3,Float64})
+        ξ, η, ζ = x
+
+        ρ = sqrt(ξ^2 + η^2)
+
+        r = sqrt(ξ^2 + η^2 + ζ^2)
+        θ = atan(η / ξ)
+        ϕ = atan(ρ / ζ)
+
+        return SA[r, θ, ϕ]
+    end
+
+    function ∇u(x::SVector{3,Float64})
+        ξ, η, ζ = x
+
+        r² = ξ^2 + η^2 + ζ^2
+        r = √r²
+        ρ² = ξ^2 + η^2
+        ρ = √ρ²
+
+        r₁ = ξ / r
+        r₂ = η / r
+        r₃ = ζ / r
+        θ₁ = -η / ρ²
+        θ₂ = ξ / ρ²
+        θ₃ = 0
+        ϕ₁ = ξ * ζ / (ρ * r²)
+        ϕ₂ = η * ζ / (ρ * r²)
+        ϕ₃ = -ρ / r²
+
+        ∇u₁ = SA[r₁, r₂, r₃]
+        ∇u₂ = SA[θ₁, θ₂, θ₃]
+        ∇u₃ = SA[ϕ₁, ϕ₂, ϕ₃]
+
+        return vcat(∇u₁', ∇u₂', ∇u₃')
+    end
+
+    function Hu(x::SVector{3,Float64})
+        ξ, η, ζ = x
+
+        ξ² = ξ^2
+        η² = η^2
+        ζ² = ζ^2
+
+        r² = ξ² + η² + ζ²
+        r = √r²
+        r³ = r² * r
+        r⁴ = r³ * r
+
+        ρ² = ξ² + η²
+        ρ = √ρ²
+        ρ³ = ρ² * ρ
+        ρ⁴ = ρ³ * ρ
+
+        r₁₁ = (η² + ζ²) / r³
+        r₁₂ = -ξ * η / r³
+        r₁₃ = -ξ * ζ / r³
+        r₂₁ = r₁₂
+        r₂₂ = (ξ² + ζ²) / r³
+        r₂₃ = -η * ζ / r³
+        r₃₁ = r₁₃
+        r₃₂ = r₂₃
+        r₃₃ = ρ² / r³
+
+        θ₁₁ = 2 * ξ * η / ρ⁴
+        θ₁₂ = (η² - ξ²) / ρ⁴
+        θ₁₃ = 0
+        θ₂₁ = θ₁₂
+        θ₂₂ = -θ₁₁
+        θ₂₃ = 0
+        θ₃₁ = θ₁₃
+        θ₃₂ = θ₂₃
+        θ₃₃ = 0
+
+        ϕ₁₁ = ζ * (-ξ² * ζ² - 3 * ξ² * ρ² + ρ² * r²) / (ρ³ * r⁴)
+        ϕ₁₂ = -ξ * η * ζ * (3 * ξ² + 3 * η² + ζ²) / (ρ³ * r⁴)
+        ϕ₁₃ = ξ * (ρ² - ζ²) / (ρ * r⁴)
+        ϕ₂₁ = ϕ₁₂
+        ϕ₂₂ = ζ * (-η² * ζ² - 3 * η² * ρ² + ρ² * r²) / (ρ³ * r⁴)
+        ϕ₂₃ = η * (ρ² - ζ²) / (ρ * r⁴)
+        ϕ₃₁ = ϕ₁₃
+        ϕ₃₂ = ϕ₂₃
+        ϕ₃₃ = 2ζ * ρ / r⁴
+
+        Hu₁ = reshape([r₁₁ r₁₂ r₁₃;
+                r₂₁ r₂₂ r₂₃;
+                r₃₁ r₃₂ r₃₃], 1, 3, 3)
+
+        Hu₂ = reshape([θ₁₁ θ₁₂ θ₁₃;
+                θ₂₁ θ₂₂ θ₂₃;
+                θ₃₁ θ₃₂ θ₃₃], 1, 3, 3)
+
+        Hu₃ = reshape([ϕ₁₁ ϕ₁₂ ϕ₁₃;
+                ϕ₂₁ ϕ₂₂ ϕ₂₃;
+                ϕ₃₁ ϕ₃₂ ϕ₃₃], 1, 3, 3)
+
+        hess_u = vcat(Hu₁, Hu₂, Hu₃)
+
+        return SArray{Tuple{3,3,3},Float64}(hess_u)
+    end
+
+    cs = ChebyshevSeries(coefs, lb, ub)
+    ts = TransformedChebyshevSeries(cs, u, ∇u, Hu)
+
+    function f(x::SVector{3,Float64})
+        ξ, η, ζ = x
+        return ξ * ζ * exp(-ξ^2 - η^2 - ζ^2)
+    end
+
+    function ∇f(x::SVector{3,Float64})
+        ξ, η, ζ = x
+
+        ξ², η², ζ² = ξ^2, η^2, ζ^2
+        r² = ξ² + η² + ζ²
+        er = exp(-r²)
+
+        f₁ = ζ * (1 - 2ξ²) * er
+        f₂ = -2 * ξ * η * ζ * er
+        f₃ = ξ * (1 - 2ζ²) * er
+
+        return SA[f₁, f₂, f₃]
+    end
+
+    function Hf(x::SVector{3,Float64})
+        ξ, η, ζ = x
+
+        ξ², η², ζ² = ξ^2, η^2, ζ^2
+        r² = ξ² + η² + ζ²
+        er = exp(-r²)
+
+        f₁₁ = 2 * ξ * ζ * (2ξ² - 3) * er
+        f₁₂ = 2 * η * ζ * (2ξ² - 1) * er
+        f₁₃ = (4 * ξ² * ζ² - 2ξ² - 2ζ² + 1) * er
+        f₂₁ = f₁₂
+        f₂₂ = 2 * ξ * ζ * (2η² - 1) * er
+        f₂₃ = 2 * ξ * η * (2ζ² - 1) * er
+        f₃₁ = f₁₃
+        f₃₂ = f₂₃
+        f₃₃ = 2 * ξ * ζ * (2ζ² - 3) * er
+
+        return SA[
+            f₁₁ f₁₂ f₁₃;
+            f₂₁ f₂₂ f₂₃;
+            f₃₁ f₃₂ f₃₃
+        ]
+    end
+
+    x₀ = SA[0.391, 0.472, 0.607]
+
+    f₀ = f(x₀)
+    ∇f₀ = ∇f(x₀)
+    Hf₀ = Hf(x₀)
+
+    @test ts(x₀) ≈ f₀
+
+    y₀, ∇y₀ = gradient(ts, x₀)
+    @test y₀ ≈ f₀
+    @test ∇y₀ ≈ ∇f₀
+
+    y₀, ∇y₀, Hy₀ = hessian(ts, x₀)
+    @test y₀ ≈ f₀
+    @test ∇y₀ ≈ ∇f₀
+    @test Hy₀ ≈ Hf₀
+end
+
+
 @testset "1-D cluster" begin
-    # f(x) = exp(cos(x/2)) in [0.0, 0.5]∪[0.5, 1.0]
-    @load "test_chebyshev_1dcc.jld2" coefs1 coefs2
+    # f(x) = exp(cos(x/2)), x ∈ [0.0, 0.5]∪[0.5, 1.0]
+    @load "coefs/test_chebyshev_1dcc.jld2" coefs1 coefs2
     cs₁ = ChebyshevSeries(coefs1, SA[0.0], SA[0.5])
     cs₂ = ChebyshevSeries(coefs2, SA[0.5], SA[1.0])
     cc = ChebyshevCluster(cs₁, cs₂)
