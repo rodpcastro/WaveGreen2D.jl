@@ -2,7 +2,8 @@ using JLD2
 using Test
 using StaticArrays
 using WaveGreen2D.Chebyshev
-using WaveGreen2D.Chebyshev: normalize, contains, clenshaw, gradient_clenshaw, hessian_clenshaw
+using WaveGreen2D.Chebyshev: normalize, contains,
+    clenshaw, gradient_clenshaw, hessian_clenshaw
 
 
 # Note: Chebyshev series must have a least order 4 in each dimension, which means
@@ -61,6 +62,21 @@ end
     @test contains(cs, SA[1.0, 0.0, 3.2])
     @test contains(cs, SA[1.4, 0.2, 3.1])
     @test !contains(cs, SA[0.5, 0.3, 3.55])
+end
+
+
+@testset "Transformed contains" begin
+    u(x::SVector{1,Float64}) = 2x
+    ∇u(x::SVector{1,Float64}) = reshape(SA[2.0], Size(1, 1))
+    Hu(x::SVector{1,Float64}) = reshape(SA[0.0], Size(1, 1, 1))
+
+    cs = ChebyshevSeries(zeros(2), SA[1.0], SA[2.0])  # u ∈ [1.0, 2.0]
+    ts = TransformedChebyshevSeries(cs, u, ∇u, Hu)    # x ∈ [0.5, 1.0]
+
+    @test contains(ts, SA[0.6])
+    @test contains(ts, SA[0.9])
+    @test !contains(ts, SA[0.4])
+    @test !contains(ts, SA[1.1])
 end
 
 
@@ -524,6 +540,74 @@ end
     @test y₀ ≈ f₀
     @test ∇y₀ ≈ ∇f₀
     @test Hy₀ ≈ Hf₀
+end
+
+
+@testset "Identity transformation" begin
+    @load "coefs/test_chebyshev_1dtf.jld2" coefs
+    cs = ChebyshevSeries(coefs, 0.0, 0.5 * π)
+    ts = TransformedChebyshevSeries(cs)
+
+    x = 1.42
+
+    @test ts(x) ≈ sin(x)
+
+    y, dy_dx = gradient(ts, x)
+    @test y ≈ sin(x)
+    @test dy_dx ≈ cos(x)
+
+    y, dy_dx, d²y_dx² = hessian(ts, x)
+    @test y ≈ sin(x)
+    @test dy_dx ≈ cos(x)
+    @test d²y_dx² ≈ -sin(x)
+end
+
+
+@testset "Transformed series return type error" begin
+    x_type = SVector{1,Float64}
+    u_type = SVector{1,Float64}
+    ∇u_type = SMatrix{1,1,Float64,1}
+    Hu_type = SArray{Tuple{1,1,1},Float64,3,1}
+
+    u(x::x_type) = zero(u_type)
+    ∇u(x::x_type) = zero(∇u_type)
+    Hu(x::x_type) = zero(Hu_type)
+
+    u_bad_input(x::Vector) = zero(u_type)
+    ∇u_bad_input(x::Vector) = zero(u_type)
+    Hu_bad_input(x::Vector) = zero(u_type)
+
+    u_bad_output(x::x_type) = 0.0
+    ∇u_bad_output(x::x_type) = Vector{Float64}(undef, 1)
+    Hu_bad_output(x::x_type) = Matrix{Float64}(undef, 1, 1)
+
+    u_boom(x::x_type) = error("boom")
+
+    cs = ChebyshevSeries(zeros(2), SA[-1.5], SA[0.5])
+
+    err_x_type = ErrorException(
+        "The transformation function must accept an argument of type $x_type"
+    )
+    err_u_type = ErrorException(
+        "The transformation function must return a $u_type"
+    )
+    err_∇u_type = ErrorException(
+        "The gradient of the transformation function must return a $∇u_type"
+    )
+    err_Hu_type = ErrorException(
+        "The hessian of the transformation function must return a $Hu_type"
+    )
+    err_boom = ErrorException("boom")
+
+    @test_throws err_x_type TransformedChebyshevSeries(cs, u_bad_input, ∇u, Hu)
+    @test_throws err_x_type TransformedChebyshevSeries(cs, u, ∇u_bad_input, Hu)
+    @test_throws err_x_type TransformedChebyshevSeries(cs, u, ∇u, Hu_bad_input)
+
+    @test_throws err_u_type TransformedChebyshevSeries(cs, u_bad_output, ∇u, Hu)
+    @test_throws err_∇u_type TransformedChebyshevSeries(cs, u, ∇u_bad_output, Hu)
+    @test_throws err_Hu_type TransformedChebyshevSeries(cs, u, ∇u, Hu_bad_output)
+
+    @test_throws err_boom TransformedChebyshevSeries(cs, u_boom, ∇u, Hu_bad_output)
 end
 
 
