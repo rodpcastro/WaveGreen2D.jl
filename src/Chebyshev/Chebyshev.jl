@@ -5,13 +5,13 @@ export ChebyshevSeries, TransformedChebyshevSeries, ChebyshevCluster, gradient, 
 using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size, pop
 
 
-abstract type AbstractChebyshevSeries{T, N} end
+abstract type AbstractChebyshevSeries{T,N} end
 
 
 """
     ChebyshevSeries{T, N}
 
-The Chebyshev series approximation of a `N`-dimensional 
+The Chebyshev series approximation of a `N`-dimensional
 function defined in a bounded domain.
 
 # Fields
@@ -19,10 +19,10 @@ function defined in a bounded domain.
 - `lb::SVector{N, T}`: domain lower bound
 - `ub::SVector{N, T}`: domain upper bound
 """
-struct ChebyshevSeries{T, N} <: AbstractChebyshevSeries{T, N}
-    coefs::Array{T, N}
-    lb::SVector{N, T}
-    ub::SVector{N, T}
+struct ChebyshevSeries{T,N} <: AbstractChebyshevSeries{T,N}
+    coefs::Array{T,N}
+    lb::SVector{N,T}
+    ub::SVector{N,T}
 end
 
 
@@ -31,8 +31,8 @@ end
 
 Simpler constructor for one-dimensional Chebyshev series.
 """
-function ChebyshevSeries(coefs::Array{T, 1}, lb::T, ub::T) where T
-    return ChebyshevSeries(coefs, SVector{1, T}(lb), SVector{1, T}(ub))
+function ChebyshevSeries(coefs::Array{T,1}, lb::T, ub::T) where T
+    return ChebyshevSeries(coefs, SVector{1,T}(lb), SVector{1,T}(ub))
 end
 
 
@@ -41,7 +41,7 @@ end
 
 A zero-dimensional Chebyshev series is just the coefficient.
 """
-function ChebyshevSeries(coefs::Array{T, 0}, lb::SVector{0, T}, ub::SVector{0, T}) where T
+function ChebyshevSeries(coefs::Array{T,0}, lb::SVector{0,T}, ub::SVector{0,T}) where T
     return coefs[]
 end
 
@@ -53,14 +53,14 @@ Validates the input and return types of `u`, `∇u` and `Hu`.
 """
 function validate_transformation(::Type{T}, N::Int, u, ∇u, Hu) where T
     # Expected types
-    x_type = SVector{N, T}
-    u_type = SVector{N, T}
-    ∇u_type = SMatrix{N, N, T, N^2}
-    Hu_type = SArray{Tuple{N, N, N}, T, 3, N^3}
+    x_type = SVector{N,T}
+    u_type = SVector{N,T}
+    ∇u_type = SMatrix{N,N,T,N^2}
+    Hu_type = SArray{Tuple{N,N,N},T,3,N^3}
 
     # Test input
     x₀ = zero(x_type)
-    
+
     try
         u₀ = u(x₀)
         ∇u₀ = ∇u(x₀)
@@ -98,15 +98,17 @@ The transformation of a Chebyshev series in the domain `u` to the domain `x`.
 - `∇u::G`: transformation function gradient ``∇u(x)``
 - `Hu::H`: transformation function hessian ``\\mathrm{H}u(x)``
 """
-struct TransformedChebyshevSeries{T, N, F, G, H} <: AbstractChebyshevSeries{T, N}
-    series::ChebyshevSeries{T, N}
+struct TransformedChebyshevSeries{T,N,F,G,H} <: AbstractChebyshevSeries{T,N}
+    series::ChebyshevSeries{T,N}
     u::F
     ∇u::G
     Hu::H
 
-    function TransformedChebyshevSeries(series::ChebyshevSeries{T, N}, u::F, ∇u::G, Hu::H) where {T, N, F, G, H}
+    function TransformedChebyshevSeries(
+        series::ChebyshevSeries{T,N}, u::F, ∇u::G, Hu::H
+    ) where {T,N,F,G,H}
         validate_transformation(T, N, u, ∇u, Hu)
-        return new{T, N, F, G, H}(series, u, ∇u, Hu)
+        return new{T,N,F,G,H}(series, u, ∇u, Hu)
     end
 end
 
@@ -116,12 +118,12 @@ end
 
 Identically transformed Chebyshev series.
 """
-function TransformedChebyshevSeries(series::ChebyshevSeries{T, N}) where {T, N}
+function TransformedChebyshevSeries(series::ChebyshevSeries{T,N}) where {T,N}
     # Identity transformation
-    u(x::SVector{N, T}) = x
-    ∇u(x::SVector{N, T}) = one(SMatrix{N, N, T, N^2})
-    Hu(x::SVector{N, T}) = zero(SArray{Tuple{N, N, N}, T, 3, N^3})
-    
+    u(x::SVector{N,T}) = x
+    ∇u(x::SVector{N,T}) = one(SMatrix{N,N,T,N^2})
+    Hu(x::SVector{N,T}) = zero(SArray{Tuple{N,N,N},T,3,N^3})
+
     return TransformedChebyshevSeries(series, u, ∇u, Hu)
 end
 
@@ -134,19 +136,21 @@ A collection of `M` equidimensional `ChebyshevSeries` objects.
 # Fields
 - `series::NTuple{M, ChebyshevSeries{T, N}}`: `N`-dimensional Chebyshev series
 """
-struct ChebyshevCluster{T, N, M} <: AbstractChebyshevSeries{T, N}
-    series::NTuple{M, ChebyshevSeries{T, N}}
+struct ChebyshevCluster{T,N,M} <: AbstractChebyshevSeries{T,N}
+    series::NTuple{M,ChebyshevSeries{T,N}}
 end
 
 
 """
-    ChebyshevCluster(series::ChebyshevSeries{T, N}...) where {T, N} -> ChebyshevCluster{T, N, M}
+    ChebyshevCluster(
+        series::ChebyshevSeries{T, N}...
+    ) where {T, N} -> ChebyshevCluster{T, N, M}
 
 Simpler constructor for a Chebyshev cluster.
 """
-function ChebyshevCluster(series::ChebyshevSeries{T, N}...) where {T, N}
+function ChebyshevCluster(series::ChebyshevSeries{T,N}...) where {T,N}
     M = length(series)
-    return ChebyshevCluster{T, N, M}(series)
+    return ChebyshevCluster{T,N,M}(series)
 end
 
 
@@ -155,7 +159,7 @@ end
 
 Converts a point `x` to its normalized coordinates in ``[-1, 1]^N``.
 """
-function normalize(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+function normalize(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N}
     @. (2x - f.lb - f.ub) / (f.ub - f.lb)
 end
 
@@ -165,7 +169,7 @@ end
 
 Checks if the point `x` is in the domain of `f`.
 """
-function contains(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+function contains(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N}
     return all(f.lb .≤ x .≤ f.ub)
 end
 
@@ -173,10 +177,10 @@ end
 """
     contains(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> Bool
 
-Checks if the point `x` is in the domain of `g`, which is equivalent 
+Checks if the point `x` is in the domain of `g`, which is equivalent
 to checking if the point `g.u(x)` is in the domain of `g.series`.
 """
-function contains(g::TransformedChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N}
+function contains(g::TransformedChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N}
     return contains(g.series, g.u(x))
 end
 
@@ -184,10 +188,10 @@ end
 """
     contains(h::ChebyshevCluster{T, N, M}, x::SVector{N, T}) where {T, N, M} -> Int
 
-Finds the index of the series in the cluster `h` where the 
+Finds the index of the series in the cluster `h` where the
 point `x` is located. Returns `0` if `x` is not in `h`.
 """
-function contains(h::ChebyshevCluster{T, N, M}, x::SVector{N, T}) where {T, N, M}
+function contains(h::ChebyshevCluster{T,N,M}, x::SVector{N,T}) where {T,N,M}
     for i in 1:M
         if contains(h.series[i], x)
             return i

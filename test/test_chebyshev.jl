@@ -1,9 +1,8 @@
 using JLD2
 using Test
 using StaticArrays
-using WaveGreen2D.Chebyshev
-using WaveGreen2D.Chebyshev: normalize, contains,
-    clenshaw, gradient_clenshaw, hessian_clenshaw
+using WaveGreen2D.Chebyshev: ChebyshevSeries, TransformedChebyshevSeries, ChebyshevCluster,
+    gradient, hessian, normalize, contains, clenshaw, gradient_clenshaw, hessian_clenshaw
 
 
 # Note: Chebyshev series must have a least order 4 in each dimension, which means
@@ -124,8 +123,8 @@ end
 
 @testset "1-D transcendental function" begin
     # f(x) = sin(x), x ∈ [0.0, π/2]
-    @load "coefs/test_chebyshev_1dtf.jld2" coefs
-    cs = ChebyshevSeries(coefs, 0.0, 0.5 * π)
+    @load "coefs/test_chebyshev_1dtf.jld2" coefs lb ub
+    cs = ChebyshevSeries(coefs, lb, ub)
     x = π / 3
 
     @test cs(x) ≈ sin(x)
@@ -143,8 +142,8 @@ end
 
 @testset "2-D transcendental function" begin
     # f(x) = cos(x*y/4), x ∈ [-0.05, 0.15]×[0.2, 0.4]
-    @load "coefs/test_chebyshev_2dtf.jld2" coefs
-    cs = ChebyshevSeries(coefs, SA[-0.05, 0.2], SA[0.15, 0.4])
+    @load "coefs/test_chebyshev_2dtf.jld2" coefs lb ub
+    cs = ChebyshevSeries(coefs, lb, ub)
     x̄ = [0.1, 0.3]
     x, y = x̄
 
@@ -177,8 +176,8 @@ end
 
 @testset "3-D transcendental function" begin
     # f(x) = exp(x*y) * cos(x + z/2), x ∈ [0.5, 0.7]×[-0.2, 0.0]×[1.0, 1.2]
-    @load "coefs/test_chebyshev_3dtf.jld2" coefs
-    cs = ChebyshevSeries(coefs, SA[0.5, -0.2, 1.0], SA[0.7, 0.0, 1.2])
+    @load "coefs/test_chebyshev_3dtf.jld2" coefs lb ub
+    cs = ChebyshevSeries(coefs, lb, ub)
     x̄ = [0.57, -0.02, 1.13]
     x, y, z = x̄
 
@@ -223,10 +222,10 @@ end
 
 
 @testset "1-D transformed series" begin
-    # f(u) = sin(u²), u(x) = √x, x ∈ [0.0, 0.5*π]
-    @load "coefs/test_chebyshev_1dts.jld2" coefs #lb ub
-
-    lb, ub = 0.0, sqrt(0.5 * π)
+    # f(u) = sin(u²)
+    # u(x) = √x
+    # u ∈ [0.0, 1.5]
+    @load "coefs/test_chebyshev_1dts.jld2" coefs lb ub
 
     u(x::SVector{1,Float64}) = x .^ 0.5
     ∇u(x::SVector{1,Float64}) = reshape(0.5 * x .^ -0.5, Size(1, 1))
@@ -257,10 +256,8 @@ end
 @testset "2-D transformed series" begin
     # f(u) = f(r, θ) = exp(r*cos(θ)) * cos(r*sin(θ))
     # u(x) = u(ξ, η) = (r=√(ξ² + η²), θ=atan(η/ξ))
-    # u ∈ [0.1, 2.0]×[-0.2*π, 0.4*π]
-    @load "coefs/test_chebyshev_2dts.jld2" coefs #lb ub
-
-    lb, ub = SA[0.1, -0.2*π], SA[2.0, 0.4*π]
+    # u ∈ [0.1, 2.0]×[-0.7, 1.3]
+    @load "coefs/test_chebyshev_2dts.jld2" coefs lb ub
 
     function u(x::SVector{2,Float64})
         ξ, η = x
@@ -373,9 +370,7 @@ end
     # f(u) = f(r, θ, ϕ) = r² * sin(ϕ) * cos(θ) * cos(ϕ) * exp(-r²)
     # u(x) = u(ξ, η, ζ) = (r=√(ξ² + η² + ζ²), θ=atan(η/ξ), ϕ=acos(ζ/r))
     # u ∈ [0.1, 2.2]×[0.2, 1.8]×[0.3, 1.6]
-    @load "coefs/test_chebyshev_3dts.jld2" coefs #lb ub
-
-    lb, ub = SA[0.1, 0.2, 0.3], SA[2.2, 1.8, 1.6]
+    @load "coefs/test_chebyshev_3dts.jld2" coefs lb ub
 
     function u(x::SVector{3,Float64})
         ξ, η, ζ = x
@@ -613,9 +608,9 @@ end
 
 @testset "1-D cluster" begin
     # f(x) = exp(cos(x/2)), x ∈ [0.0, 0.5]∪[0.5, 1.0]
-    @load "coefs/test_chebyshev_1dcc.jld2" coefs1 coefs2
-    cs₁ = ChebyshevSeries(coefs1, SA[0.0], SA[0.5])
-    cs₂ = ChebyshevSeries(coefs2, SA[0.5], SA[1.0])
+    @load "coefs/test_chebyshev_1dcc.jld2" coefs1 lb1 ub1 coefs2 lb2 ub2
+    cs₁ = ChebyshevSeries(coefs1, lb1, ub1)
+    cs₂ = ChebyshevSeries(coefs2, lb2, ub2)
     cc = ChebyshevCluster(cs₁, cs₂)
 
     x₁, x₂ = 0.35, 0.9
