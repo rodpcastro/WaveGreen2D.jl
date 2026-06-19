@@ -14,9 +14,11 @@ using QuadGK
 using Random
 
 
+data_dir = joinpath(@__DIR__, "data")
+img_dir = joinpath(@__DIR__, "images")
+bench_file = joinpath(data_dir, "qorder_benchmarks.jld2")
+
 Random.seed!(18)
-
-
 tol = eps()
 imax = 1e4
 
@@ -34,7 +36,9 @@ function L₁(x::AbstractVector{<:Real}; qorder::Int=7)
     y = 0.0
 
     for i in 1:length(path)-1
-        y += quadgk(p, path[i], path[i+1]; rtol=tol, atol=tol, maxevals=imax, order=qorder)[1]
+        y += quadgk(
+            p, path[i], path[i+1]; rtol=tol, atol=tol, maxevals=imax, order=qorder
+        )[1]
     end
 
     return real(y)
@@ -57,14 +61,16 @@ function L₂(x::AbstractVector{<:Real}; qorder::Int=7)
     y = 0.0
 
     for i in 1:length(path)-1
-        y += quadgk(h, path[i], path[i+1]; rtol=tol, atol=tol, maxevals=imax, order=qorder)[1]
+        y += quadgk(
+            h, path[i], path[i+1]; rtol=tol, atol=tol, maxevals=imax, order=qorder
+        )[1]
     end
 
     return real(y)
 end
 
 
-function create_plot(x, y₁, y₂; title="", filename="images/qorder_plot.svg")
+function create_plot(x, y₁, y₂; title="", filename="qorder_plot.svg")
     fig = Figure()
     ax = Axis(fig[1, 1], title=title, xlabel="Quadrature order")
     lines!(ax, x, y₁, color=:green, linestyle=:solid, label=L"L_1")
@@ -100,16 +106,22 @@ if length(ARGS) > 0
         L₁_bench = sort(L₁_bench)
         L₂_bench = sort(L₂_bench)
 
-        mkpath("data")
-        @save "data/qorder_benchmarks.jld2" qorder_vals L₁_bench L₂_bench
+        mkpath(data_dir)
+        @save bench_file qorder_vals L₁_bench L₂_bench
 
     else
         println("Unknown argument: $arg")
         exit()
     end
 else
+    if !isfile(bench_file)
+        println("There is no benchmark file to load. Create the benchmark file by running:")
+        println("   julia $(@__FILE__) benchmark")
+        exit()
+    end
+
     println("Loading benchmark")
-    @load "data/qorder_benchmarks.jld2" qorder_vals L₁_bench L₂_bench
+    @load bench_file qorder_vals L₁_bench L₂_bench
 end
 
 
@@ -122,14 +134,14 @@ L₂_memory = [bench.memory for bench in values(L₂_bench)]
 L₂_allocs = [bench.allocs for bench in values(L₂_bench)]
 
 println("Plotting")
-mkpath("images")
+mkpath(img_dir)
 
 create_plot(
     qorder_vals,
     L₁_time,
     L₂_time;
     title="Mean execution time x Quadrature order",
-    filename="images/qorder_time.svg"
+    filename=joinpath(img_dir, "qorder_time.svg")
 )
 
 create_plot(
@@ -137,7 +149,7 @@ create_plot(
     L₁_memory,
     L₂_memory;
     title="Allocated memory x Quadrature order",
-    filename="images/qorder_memory.svg"
+    filename=joinpath(img_dir, "qorder_memory.svg")
 )
 
 create_plot(
@@ -145,7 +157,7 @@ create_plot(
     L₁_allocs,
     L₂_allocs;
     title="Number of allocations x Quadrature order",
-    filename="images/qorder_allocs.svg"
+    filename=joinpath(img_dir, "qorder_allocs.svg")
 )
 
 println("Done")
