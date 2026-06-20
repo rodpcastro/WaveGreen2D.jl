@@ -1,18 +1,31 @@
-using Printf: @sprintf
+"""
+    order(f::ChebyshevSeries{T,N}) where {T,N} -> NTuple{N, Int}
 
-
+Chebyshev series order, which is equal to the number of coefficients along each dimension
+minus one.
+"""
 function order(f::ChebyshevSeries{T,N}) where {T,N}
     return ntuple(i -> f.coefs.size[i] - 1, Val(N))
 end
 
 
+"""order(f::ChebyshevSeries{T,1}) where T -> Int"""
 function order(f::ChebyshevSeries{T,1}) where T
     return f.coefs.size[1] - 1
 end
 
 
+"""
+    domain(f::ChebyshevSeries{T,N}) where {T,N} -> String
+
+Domain of the Chebyshev series given as the cartesian product of closed intervals along
+each dimension. The lower and upper bounds of the intervals are rounded to three digits
+of decimal precision.
+"""
 function domain(f::ChebyshevSeries{T,N}) where {T,N}
-    intervals = ntuple(i -> @sprintf("[%.3f, %.3f]", f.lb[i], f.ub[i]), Val(N))
+    intervals = ntuple(
+        i -> "[$(round(f.lb[i]; digits=3)), $(round(f.ub[i], digits=3))]", Val(N)
+    )
     return join(intervals, "×")
 end
 

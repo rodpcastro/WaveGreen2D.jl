@@ -114,7 +114,9 @@ end
 
 
 """
-    TransformedChebyshevSeries(series::ChebyshevSeries{T, N}) where {T, N} -> TransformedChebyshevSeries{T, N}
+    TransformedChebyshevSeries(
+        series::ChebyshevSeries{T, N}
+    ) where {T, N} -> TransformedChebyshevSeries{T, N}
 
 Identically transformed Chebyshev series.
 """
