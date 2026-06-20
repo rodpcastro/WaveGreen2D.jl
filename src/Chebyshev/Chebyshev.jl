@@ -204,5 +204,6 @@ end
 include("clenshaw.jl")
 include("gradient.jl")
 include("hessian.jl")
+include("printing.jl")
 
 end
