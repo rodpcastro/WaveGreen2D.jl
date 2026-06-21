@@ -2,7 +2,8 @@ using JLD2
 using Test
 using StaticArrays
 using WaveGreen2D.Chebyshev: ChebyshevSeries, TransformedChebyshevSeries, ChebyshevCluster,
-    gradient, hessian, normalize, contains, clenshaw, gradient_clenshaw, hessian_clenshaw
+    gradient, hessian, normalize, contains, clenshaw, gradient_clenshaw, hessian_clenshaw,
+    order, domain
 
 
 # Note: Chebyshev series must have a least order 4 in each dimension, which means
@@ -654,4 +655,110 @@ end
     @test_throws DomainError cc(-2.0)
     @test_throws DomainError gradient(cc, 3.0)
     @test_throws DomainError hessian(cc, 4.0)
+end
+
+
+@testset "Series order" begin
+    cs1 = ChebyshevSeries(zeros(10), -8.0, 4.0)
+    cs2 = ChebyshevSeries(zeros(9, 5), SA[-2.0, -1.0], SA[1.0, 2.0])
+    cs3 = ChebyshevSeries(zeros(4, 5, 3), SA[-5.0, -3.0, -0.5], SA[1.5, 2.0, 3.5])
+    ts = TransformedChebyshevSeries(cs3)
+
+    @test order(cs1) == 9
+    @test order(cs2) == (8, 4)
+    @test order(cs3) == (3, 4, 2)
+    @test order(ts) == (3, 4, 2)
+end
+
+
+@testset "Series domain" begin
+    cs1 = ChebyshevSeries(zeros(10), -8.0, 4.5989)
+    cs2 = ChebyshevSeries(zeros(9, 5), SA[-2.1694, -1.3315], SA[1.0, 2.1125])
+    cs3 = ChebyshevSeries(zeros(4, 5, 3), SA[-5.9994, -3.0, -0.5995], SA[1.5, 2.0, 3.5])
+    ts = TransformedChebyshevSeries(cs3)
+
+    @test domain(cs1) == "[-8.0, 4.599]"
+    @test domain(cs2) == "[-2.169, 1.0]×[-1.332, 2.112]"
+    @test domain(cs3) == "[-5.999, 1.5]×[-3.0, 2.0]×[-0.6, 3.5]"
+    @test domain(ts) == "[-5.999, 1.5]×[-3.0, 2.0]×[-0.6, 3.5]"
+end
+
+
+@testset "Series show" begin
+    io = IOBuffer()
+
+    cs1 = ChebyshevSeries(zeros(17), 10.0, 90.0)
+    cs2 = ChebyshevSeries(zeros(7, 9), SA[-1.900, -8.6667], SA[2.2225, 1.00])
+    cs3 = ChebyshevSeries(zeros(5, 10, 3), SA[-3.51, 0.343, -3.729], SA[4.56, 6.258, 4.96])
+
+    cs1_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), cs1)
+    cs1_short = sprint((io, x) -> show(io, x), cs1)
+
+    cs2_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), cs2)
+    cs2_short = sprint((io, x) -> show(io, x), cs2)
+
+    cs3_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), cs3)
+    cs3_short = sprint((io, x) -> show(io, x), cs3)
+
+    @test cs1_short == "1-D Chebyshev series of order 16"
+    @test cs1_long == "1-dimensional Chebyshev series of order 16 for x ∈ [10.0, 90.0]"
+
+    @test cs2_short == "2-D Chebyshev series of order (6, 8)"
+    @test cs2_long == "2-dimensional Chebyshev series of order (6, 8) " *
+                      "for x ∈ [-1.9, 2.222]×[-8.667, 1.0]"
+
+    @test cs3_short == "3-D Chebyshev series of order (4, 9, 2)"
+    @test cs3_long == "3-dimensional Chebyshev series of order (4, 9, 2) " *
+                      "for x ∈ [-3.51, 4.56]×[0.343, 6.258]×[-3.729, 4.96]"
+end
+
+
+@testset "Transformed series show" begin
+    io = IOBuffer()
+
+    cs1 = ChebyshevSeries(zeros(13), 11.1115, 90.6669)
+    cs2 = ChebyshevSeries(zeros(5, 7), SA[-1.91, -8.60], SA[1.25, 3.0])
+    cs3 = ChebyshevSeries(zeros(2, 4, 5), SA[-1.42, -2.125, 0.7542], SA[5.46, 3.278, 2.86])
+
+    ts1 = TransformedChebyshevSeries(cs1)
+    ts2 = TransformedChebyshevSeries(cs2)
+    ts3 = TransformedChebyshevSeries(cs3)
+
+    ts1_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), ts1)
+    ts1_short = sprint((io, x) -> show(io, x), ts1)
+
+    ts2_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), ts2)
+    ts2_short = sprint((io, x) -> show(io, x), ts2)
+
+    ts3_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), ts3)
+    ts3_short = sprint((io, x) -> show(io, x), ts3)
+
+    @test ts1_short == "1-D transformed Chebyshev series of order 12"
+    @test ts1_long == "1-dimensional transformed Chebyshev series of order 12 " *
+                      "for u(x) ∈ [11.112, 90.667]"
+
+    @test ts2_short == "2-D transformed Chebyshev series of order (4, 6)"
+    @test ts2_long == "2-dimensional transformed Chebyshev series of order (4, 6) " *
+                      "for u(x) ∈ [-1.91, 1.25]×[-8.6, 3.0]"
+
+    @test ts3_short == "3-D transformed Chebyshev series of order (1, 3, 4)"
+    @test ts3_long == "3-dimensional transformed Chebyshev series of order (1, 3, 4) " *
+                      "for u(x) ∈ [-1.42, 5.46]×[-2.125, 3.278]×[0.754, 2.86]"
+end
+
+
+@testset "Cluster show" begin
+    io = IOBuffer()
+
+    cs1 = ChebyshevSeries(zeros(2, 3), SA[9.10, -4.50], SA[1.30, 10.0])
+    cs2 = ChebyshevSeries(zeros(4, 5), SA[-1.9, -5.10], SA[1.35, 3.1])
+    cc = ChebyshevCluster(cs1, cs2)
+
+    cc_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), cc)
+    cc_short = sprint((io, x) -> show(io, x), cc)
+
+    @test cc_short == "Cluster of 2 2-D Chebyshev series"
+    @test cc_long == "Cluster of 2 2-D Chebyshev series: \n" *
+                     "1. Order (1, 2), x ∈ [9.1, 1.3]×[-4.5, 10.0]\n" *
+                     "2. Order (3, 4), x ∈ [-1.9, 1.35]×[-5.1, 3.1]"
 end

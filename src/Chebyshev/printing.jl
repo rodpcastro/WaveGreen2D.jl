@@ -15,6 +15,11 @@ function order(f::ChebyshevSeries{T,1}) where T
 end
 
 
+function order(g::TransformedChebyshevSeries)
+    return order(g.series)
+end
+
+
 """
     domain(f::ChebyshevSeries{T,N}) where {T,N} -> String
 
@@ -24,9 +29,14 @@ of decimal precision.
 """
 function domain(f::ChebyshevSeries{T,N}) where {T,N}
     intervals = ntuple(
-        i -> "[$(round(f.lb[i]; digits=3)), $(round(f.ub[i], digits=3))]", Val(N)
+        i -> "[$(round(f.lb[i]; digits=3)), $(round(f.ub[i]; digits=3))]", Val(N)
     )
     return join(intervals, "×")
+end
+
+
+function domain(g::TransformedChebyshevSeries)
+    return domain(g.series)
 end
 
 
