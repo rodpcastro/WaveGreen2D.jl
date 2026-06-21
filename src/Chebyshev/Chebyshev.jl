@@ -145,12 +145,13 @@ end
 
 """
     ChebyshevCluster(
-        series::ChebyshevSeries{T, N}...
-    ) where {T, N} -> ChebyshevCluster{T, N, M}
+        f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...
+    ) where {T,N} -> ChebyshevCluster{T,N,M}
 
 Simpler constructor for a Chebyshev cluster.
 """
-function ChebyshevCluster(series::ChebyshevSeries{T,N}...) where {T,N}
+function ChebyshevCluster(f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...) where {T,N}
+    series = (f¹, fᴹ⁻¹...)
     M = length(series)
     return ChebyshevCluster{T,N,M}(series)
 end
