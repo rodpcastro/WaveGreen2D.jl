@@ -16,7 +16,9 @@ using Random
 
 data_dir = joinpath(@__DIR__, "data")
 img_dir = joinpath(@__DIR__, "images")
+
 bench_file = joinpath(data_dir, "qorder_benchmarks.jld2")
+img_file = joinpath(img_dir, "qorder_benchmarks.svg")
 
 Random.seed!(18)
 tol = eps()
@@ -70,16 +72,6 @@ function L₂(x::AbstractVector{<:Real}; qorder::Int=7)
 end
 
 
-function create_plot(x, y₁, y₂; title="", filename="qorder_plot.svg")
-    fig = Figure()
-    ax = Axis(fig[1, 1], title=title, xlabel="Quadrature order")
-    lines!(ax, x, y₁, color=:green, linestyle=:solid, label=L"L_1")
-    lines!(ax, x, y₂, color=:red, linestyle=:dashdot, label=L"L_2")
-    axislegend()
-    save(filename, fig)
-end
-
-
 if length(ARGS) > 0
     arg = ARGS[1]
     if arg == "benchmark" || arg == "bench"
@@ -125,39 +117,34 @@ else
 end
 
 
-L₁_time = [bench.time for bench in values(L₁_bench)]
-L₁_memory = [bench.memory for bench in values(L₁_bench)]
-L₁_allocs = [bench.allocs for bench in values(L₁_bench)]
-
-L₂_time = [bench.time for bench in values(L₂_bench)]
-L₂_memory = [bench.memory for bench in values(L₂_bench)]
-L₂_allocs = [bench.allocs for bench in values(L₂_bench)]
-
 println("Plotting")
 mkpath(img_dir)
 
-create_plot(
-    qorder_vals,
-    L₁_time,
-    L₂_time;
-    title="Mean execution time x Quadrature order",
-    filename=joinpath(img_dir, "qorder_time.svg")
-)
+L₁_time = [bench.time * 1e-9 for bench in values(L₁_bench)]
+L₁_memory = [bench.memory * 1e-6 for bench in values(L₁_bench)]
+L₁_allocs = [bench.allocs * 1e-3 for bench in values(L₁_bench)]
 
-create_plot(
-    qorder_vals,
-    L₁_memory,
-    L₂_memory;
-    title="Allocated memory x Quadrature order",
-    filename=joinpath(img_dir, "qorder_memory.svg")
-)
+L₂_time = [bench.time * 1e-9 for bench in values(L₂_bench)]
+L₂_memory = [bench.memory * 1e-6 for bench in values(L₂_bench)]
+L₂_allocs = [bench.allocs * 1e-3 for bench in values(L₂_bench)]
 
-create_plot(
-    qorder_vals,
-    L₁_allocs,
-    L₂_allocs;
-    title="Number of allocations x Quadrature order",
-    filename=joinpath(img_dir, "qorder_allocs.svg")
-)
+fig = Figure(size=(1200, 400))
+axes = [Axis(fig[1, m], xlabel="Quadrature order") for m in 1:3]
+
+axes[1].title = "Mean execution time (s)"
+lines!(axes[1], qorder_vals, L₁_time, color=:green, linestyle=:solid, label=L"L_1")
+lines!(axes[1], qorder_vals, L₂_time, color=:red, linestyle=:dash, label=L"L_2")
+axislegend(axes[1])
+
+axes[2].title = "Allocated memory (MB)"
+lines!(axes[2], qorder_vals, L₁_memory, color=:green, linestyle=:solid, label=L"L_1")
+lines!(axes[2], qorder_vals, L₂_memory, color=:red, linestyle=:dash, label=L"L_2")
+
+axes[3].title = "Number of allocations (10³)"
+lines!(axes[3], qorder_vals, L₁_allocs, color=:green, linestyle=:solid, label=L"L_1")
+lines!(axes[3], qorder_vals, L₂_allocs, color=:red, linestyle=:dash, label=L"L_2")
+
+save(img_file, fig)
+
 
 println("Done")

@@ -7,7 +7,7 @@ The integrals $L_1$ and $L_2$ are the main objects of approximation by Chebyshev
 The numerical experiment was performed with [BenchmarkTools.jl], and studied how the quadrature `order`, parameter of [`quadgk`][quadgk], influences execution time, memory allocated and number of allocations. Each quadrature was executed for 1000 random points in the domain of interest, and the averages are presented in the following image, created with [Makie].
 
 <p align="center">
-    <img src="images/quadrature_order.svg" alt="Quadrature order">
+    <img src="images/qorder_benchmarks.svg" alt="Quadrature order benchmark">
 </p>
 
 The optimal value of quadrature order ranges between 24 and 34. The integrals $L_1$ and $L_2$ are evaluated with the `order` parameter of `quadgk` varying in this range. If a particular choice of `order` does not make the integral converge to the desired accuracy, another value in the range is chosen and the computation is repeated. This slight change in the quadrature process proved itself successful in avoiding non-convergent calculations.
@@ -17,7 +17,6 @@ The optimal value of quadrature order ranges between 24 and 34. The integrals $L
 ## References
 1. Steven Johnson. 2021. FastChebInterp.jl. https://github.com/JuliaMath/FastChebInterp.jl
 2. Julia Math. 2016. QuadGK.jl. https://github.com/JuliaMath/QuadGK.jl
-
 
 <!--Links-->
 [wavegreen2d]: https://github.com/rodpcastro/WaveGreen2D.jl/tree/main/src
