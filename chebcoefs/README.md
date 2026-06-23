@@ -29,11 +29,11 @@ The coefficients for the Chebyshev series that approximate the two integrals are
 The maximum absolute values of the coefficients along each dimension of the two integrals are presented in the images below:
 
 <p align="center">
-    <img src="images/l1_maxcoefs.svg" alt="L1 maximum absolute coefficients">
+    <img src="images/l1_maxcoefs.svg" alt="L1 maximum absolute coefficients" width="800">
 </p>
 
 <p align="center">
-    <img src="images/l2_maxcoefs.svg" alt="L2 maximum absolute coefficients">
+    <img src="images/l2_maxcoefs.svg" alt="L2 maximum absolute coefficients" width="1200">
 </p>
 
 The coefficients for the series that approximate $L_1$ and $L_2$, together with the lower and upper bounds of each subdomain, are computed by the [`wavegreen_coefficients.jl`][wavecoefs] script and saved as [`ChebyshevSeries`][chebseries] objects in the file [`chebyshev_series.jld2`][wavegreen2d] with the help of the [JLD2.jl] library.
