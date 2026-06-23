@@ -216,17 +216,21 @@ supertitle = Label(fig[0, :], "Maximum coefficient (in absolute value) along eac
 for m in 1:ndomains
     coefs = L_series[m].coefs
 
+    order_A = 0:size(coefs, 1)-1
+    order_B = 0:size(coefs, 2)-1
+    order_H = 0:size(coefs, 3)-1
+
     coefs_A = [maximum(abs.(coefs[i, :, :])) for i in 1:size(coefs, 1)]
     coefs_B = [maximum(abs.(coefs[:, j, :])) for j in 1:size(coefs, 2)]
-    coefs_lnH = [maximum(abs.(coefs[:, :, k])) for k in 1:size(coefs, 3)]
+    coefs_H = [maximum(abs.(coefs[:, :, k])) for k in 1:size(coefs, 3)]
 
-    lines!(axes[m], 1:size(coefs, 1), coefs_A, color=:red, linestyle=:dash, label=L"A")
-    lines!(axes[m], 1:size(coefs, 2), coefs_B, color=:green, linestyle=:dot, label=L"B")
+    lines!(axes[m], order_A, coefs_A, color=:red, linestyle=:dash, label=L"A")
+    lines!(axes[m], order_B, coefs_B, color=:green, linestyle=:dot, label=L"B")
 
     if m == 1
-        lines!(axes[m], 1:size(coefs, 3), coefs_lnH, color=:blue, linestyle=:solid, label=L"H")
+        lines!(axes[m], order_H, coefs_H, color=:blue, linestyle=:solid, label=L"H")
     else
-        lines!(axes[m], 1:size(coefs, 3), coefs_lnH, color=:blue, linestyle=:solid, label=L"\ln H")
+        lines!(axes[m], order_H, coefs_H, color=:blue, linestyle=:solid, label=L"\ln H")
     end
 
     axislegend(axes[m])
@@ -262,13 +266,17 @@ supertitle = Label(fig[0, :], "Maximum coefficient (in absolute value) along eac
 for m in 1:ndomains
     coefs = L_series[m].coefs
 
+    order_A = 0:size(coefs, 1)-1
+    order_B = 0:size(coefs, 2)-1
+    order_H = 0:size(coefs, 3)-1
+
     coefs_A = [maximum(abs.(coefs[i, :, :])) for i in 1:size(coefs, 1)]
     coefs_B = [maximum(abs.(coefs[:, j, :])) for j in 1:size(coefs, 2)]
-    coefs_lnH = [maximum(abs.(coefs[:, :, k])) for k in 1:size(coefs, 3)]
+    coefs_H = [maximum(abs.(coefs[:, :, k])) for k in 1:size(coefs, 3)]
 
-    lines!(axes[m], 1:size(coefs, 1), coefs_A, color=:red, linestyle=:dash, label=L"A")
-    lines!(axes[m], 1:size(coefs, 2), coefs_B, color=:green, linestyle=:dot, label=L"B")
-    lines!(axes[m], 1:size(coefs, 3), coefs_lnH, color=:blue, linestyle=:solid, label=L"\ln H")
+    lines!(axes[m], order_A, coefs_A, color=:red, linestyle=:dash, label=L"A")
+    lines!(axes[m], order_B, coefs_B, color=:green, linestyle=:dot, label=L"B")
+    lines!(axes[m], order_H, coefs_H, color=:blue, linestyle=:solid, label=L"\ln H")
 
     axislegend(axes[m])
 end
