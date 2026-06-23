@@ -28,11 +28,11 @@ The coefficients for the Chebyshev series that approximate the two integrals are
 
 The maximum absolute values of the coefficients along each dimension of the two integrals are presented in the images below:
 
-<p align="center">
+<p align="center" width="100%">
     <img src="images/l1_maxcoefs.svg" alt="L1 maximum absolute coefficients" width="800">
 </p>
 
-<p align="center">
+<p align="center" width="100%">
     <img src="images/l2_maxcoefs.svg" alt="L2 maximum absolute coefficients" width="1200">
 </p>
 
