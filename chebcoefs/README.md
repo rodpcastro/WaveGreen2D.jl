@@ -26,17 +26,17 @@ The coefficients for the Chebyshev series that approximate the two integrals are
 * $L_2^3 = \lbrace L_2(A, B, \ln H) | 0.0 \le A \le 0.5, 0.0 \le B \le 2.0, 1.5 \le H \le \pi \rbrace$
   * $n_A = 12$, $n_B = 20$, $n_H = 21$
 
-The maximum absolute values of the coefficients along each dimension of the two integrals are presented in the images below, plotted with [Makie.jl]:
+The maximum absolute values of the coefficients along each dimension of the two integrals are presented in the images below:
 
 <p align="center">
     <img src="images/l1_maxcoefs.svg" alt="L1 maximum absolute coefficients">
 </p>
 
 <p align="center">
-    <img src="images/l1_maxcoefs.svg" alt="L1 maximum absolute coefficients">
+    <img src="images/l2_maxcoefs.svg" alt="L2 maximum absolute coefficients">
 </p>
 
-The coefficients for the series that approximate $L_1$ and $L_2$, together with the lower and upper bounds of each subdomain, are computed by the [`wavegreen_coefficients.jl`][wavecoefs] script and saved as [`ChebyshevSeries`][chebseries_mod] objects in the file [`chebyshev_series.jld2`][chebseries_file] with the help of the [JLD2.jl] library.
+The coefficients for the series that approximate $L_1$ and $L_2$, together with the lower and upper bounds of each subdomain, are computed by the [`wavegreen_coefficients.jl`][wavecoefs] script and saved as [`ChebyshevSeries`][chebseries] objects in the file [`chebyshev_series.jld2`][wavegreen2d] with the help of the [JLD2.jl] library.
 
 ## References
 1. Steven Johnson. 2021. FastChebInterp.jl. https://github.com/JuliaMath/FastChebInterp.jl
@@ -52,6 +52,5 @@ The coefficients for the series that approximate $L_1$ and $L_2$, together with 
 [FastChebInterp.jl]: https://github.com/JuliaMath/FastChebInterp.jl
 [BenchmarkTools.jl]: https://github.com/JuliaCI/BenchmarkTools.jl
 [Makie.jl]: https://docs.makie.org/
-[JLD2]: https://juliaio.github.io/JLD2.jl/dev/
-[chebseries_mod]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/src/Chebyshev/Chebyshev.jl
-[chebseries_file]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/src/chebyshev_series.jld2
+[JLD2.jl]: https://juliaio.github.io/JLD2.jl/dev/
+[chebseries]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/src/Chebyshev/Chebyshev.jl
