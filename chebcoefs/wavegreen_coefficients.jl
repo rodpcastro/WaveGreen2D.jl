@@ -25,7 +25,7 @@ img_dir = joinpath(@__DIR__, "images")
 cheb_file = joinpath(src_dir, "chebyshev_series.jld2")
 
 tol = eps()
-imax = 1e3
+imax = 1e4  # 1e3 also works
 qorder = 26
 
 

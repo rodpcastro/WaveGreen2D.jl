@@ -15,6 +15,7 @@ using JLD2
 
 
 coefs_dir = joinpath(dirname(@__DIR__), "test", "coefs")
+mkpath(coefs_dir)
 
 
 let filename = joinpath(coefs_dir, "test_chebyshev_1dtf.jld2")
