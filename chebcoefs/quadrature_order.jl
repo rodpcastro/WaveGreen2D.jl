@@ -7,6 +7,8 @@ import Pkg
 Pkg.activate(@__DIR__)
 Pkg.instantiate()
 
+println("Script start")
+
 using BenchmarkTools
 using CairoMakie
 using JLD2
@@ -117,7 +119,7 @@ else
 end
 
 
-println("Plotting")
+println("Plotting benchmark results")
 mkpath(img_dir)
 
 L₁_time = [bench.time * 1e-9 for bench in values(L₁_bench)]
@@ -145,6 +147,7 @@ lines!(axes[3], qorder_vals, L₁_allocs, color=:green, linestyle=:solid, label=
 lines!(axes[3], qorder_vals, L₂_allocs, color=:red, linestyle=:dash, label=L"L_2")
 
 save(img_file, fig)
+println("Plot saved at $img_dir")
 
 
-println("Done")
+println("Script end")

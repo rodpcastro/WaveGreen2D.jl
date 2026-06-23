@@ -7,6 +7,7 @@ import Pkg
 Pkg.activate(@__DIR__)
 Pkg.instantiate()
 
+println("Script start")
 
 using StaticArrays
 using FastChebInterp
@@ -122,5 +123,7 @@ let filename = joinpath(coefs_dir, "test_chebyshev_1dcc.jld2")
     @save filename coefs1 lb1 ub1 coefs2 lb2 ub2
 end
 
-
 println("Coefficients saved at $coefs_dir")
+
+
+println("Script end")
