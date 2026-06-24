@@ -213,8 +213,16 @@ L2 = Vector{Float64}(undef, npoints)
 HL2 = Array{Float64,3}(undef, npoints, 3, 3)
 
 for i in 1:npoints
-    L1[i], ∇L1[i, :], HL1[i, :, :] = L₁(x1[i])
-    L2[i], ∇L2[i, :], HL2[i, :, :] = L₂(x2[i])
+    y₁, ∇y₁, Hy₁ = L₁(x1[i])
+    y₂, ∇y₂, Hy₂ = L₂(x2[i])
+
+    L1[i] = y₁
+    ∇L1[i, :] .= ∇y₁
+    HL1[i, :, :] .= Hy₁
+
+    L2[i] = y₂
+    ∇L2[i, :] .= ∇y₂
+    HL2[i, :, :] .= Hy₂
 
     if mod(i, floor(Int, npoints / 10)) == 0
         println("$i of $npoints points computed")
@@ -223,8 +231,8 @@ for i in 1:npoints
     end
 end
 
-@save l1_file x1 L1 ∇L1
-@save l2_file x2 L2 ∇L2
+@save l1_file x1 L1 ∇L1 HL1
+@save l2_file x2 L2 ∇L2 HL2
 
 println("Test data saved at $data_dir")
 
