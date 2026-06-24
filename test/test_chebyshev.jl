@@ -6,6 +6,10 @@ using WaveGreen2D.Chebyshev: ChebyshevSeries, TransformedChebyshevSeries, Chebys
     order, domain
 
 
+# This script contais the tests for the Chebyshev submodule. Coefficients for
+# Chebyshev series used in this test file are generate by the script at
+# ../chebcoefs/test_coefficients.jl
+
 # Note: Chebyshev series must have a least order 4 in each dimension, which means that the
 # array of coefficients must have have at least size 5 in each dimension. The reason behind
 # this limitation is the Clenshaw algorithm implemented in the Chebyshev module.
