@@ -7,7 +7,7 @@
 [![Coverage Badge]][Coverage]
 [![Aqua Badge]][Aqua]
 [![JET Badge]][JET]
-[![BlueStyle Badge]][BlueStyle]
+[![Blue Badge]][Blue]
 
 # WaveGreen2D (Work in Progress)
 WaveGreen2D is a [Julia] package that computes the two-dimensional free-surface Green function according to the expressions defined in the work of [*Mackay (2021)*][Mackay].
@@ -26,8 +26,8 @@ WaveGreen2D is a [Julia] package that computes the two-dimensional free-surface 
 [Aqua Badge]: https://juliatesting.github.io/Aqua.jl/dev/assets/badge.svg
 [JET]: https://github.com/aviatesk/JET.jl
 [JET Badge]: https://img.shields.io/badge/%F0%9F%9B%A9%EF%B8%8F_tested_with-JET.jl-233f9a
-[BlueStyle]: https://github.com/JuliaDiff/BlueStyle
-[BlueStyle Badge]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
+[Blue]: https://github.com/JuliaDiff/BlueStyle
+[Blue Badge]: https://img.shields.io/badge/code%20style-blue-4495d1.svg
 
 [Mackay]: https://doi.org/10.1016/j.euromechflu.2021.01.012
 [julia]: https://julialang.org/
