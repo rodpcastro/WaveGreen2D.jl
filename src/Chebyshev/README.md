@@ -6,7 +6,7 @@ s_n = \sum_{k=0}^{n} a_k T_k(x), \tag{1}
 $$
 
 $$
-s_n = \sum_{k=0}^{n} a_k T_k(x), \label{1}
+f(x) = ax^2 + bx + c \qquad \text{(1)}
 $$
 
 ```math
