@@ -1,21 +1,18 @@
 # Chebyshev
 `ChebyshevSeries` is the main type of the `Chebyshev` module and represents a n-dimensional Chebyshev series, defined by its coefficients and domain boundaries. The following expressions provide an overview of the algorithm used for its evaluation, using the 1-dimensional case as a concrete example.
 
-$$
-s_n = \sum_{k=0}^{n} a_k T_k(x), \tag{1}
-$$
+Let $s_n$ be a 1D Chebyshev series or order $n$:
 
 $$
-f(x) = ax^2 + bx + c \qquad \text{(1)}
+s_n = \sum_{k=0}^{n} a_k T_k(x),
 $$
 
-```math
-s_n = \sum_{k=0}^{n} a_k T_k(x), \tag{1}
-```
+where $T_n$ is defined recursively as
 
-$
-T_0(x) = 1, \quad T_1(x) = x, \quad T_{n} = 2x T_{n-1}(x) - T_{n-2}(x),
-$
+$$
+T_0(x) = 1, \quad T_1(x) = x, \quad T_{n} = 2x T_{n-1}(x) - T_{n-2}(x).
+$$
+
 
 
 ## References
