@@ -5,12 +5,16 @@ $$
 s_n = \sum_{k=0}^{n} a_k T_k(x), \tag{1}
 $$
 
+$$
+s_n = \sum_{k=0}^{n} a_k T_k(x), \label{1}
+$$
+
 ```math
 s_n = \sum_{k=0}^{n} a_k T_k(x), \tag{1}
 ```
 
 $
-T_0(x) = 1, \quad T_1(x) = x, \quad T_{n} = 2x T_{n-1}(x) - T_{n-2}(x), \tag{2}
+T_0(x) = 1, \quad T_1(x) = x, \quad T_{n} = 2x T_{n-1}(x) - T_{n-2}(x),
 $
 
 
