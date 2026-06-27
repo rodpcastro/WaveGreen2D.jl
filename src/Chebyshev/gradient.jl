@@ -5,27 +5,28 @@ Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev s
 with coefficients `a` and its gradient at a normalized value `x` of its `N`-th dimension.
 """
 function gradient_clenshaw(a::Array{T,N}, x::T) where {T,N}
-    n = size(a, N)
+    # m = n+1, where n is the Chebyshev series order along the N-th dimension.
+    m = size(a, N)
     dx = 2x
 
-    aₖ, aₙ₋₁, aₙ = (selectdim(a, N, i) for i in n-2:n)
+    aₖ, aₘ₋₁, aₘ = (selectdim(a, N, i) for i in m-2:m)
     bₖ, bₖ₊₁ = (Array{T,N - 1}(undef, a.size[1:N-1]) for _ in 1:2)
     cₖ, cₖ₊₁ = (Array{T,N - 1}(undef, a.size[1:N-1]) for _ in 1:2)
 
     # bₖ used on the right-hand side actually represents bₖ₊₂.
     # bₖ₊₂ is ommited to reduce allocations. Idem for cₖ₊₂.
 
-    # k = n - 2
-    @. bₖ = aₙ  # Here, bₖ is bₖ₊₂
-    @. bₖ₊₁ = aₙ₋₁ + dx * bₖ
+    # k = m-2
+    @. bₖ = aₘ  # Here, bₖ is bₖ₊₂
+    @. bₖ₊₁ = aₘ₋₁ + dx * bₖ
     @. bₖ = aₖ + dx * bₖ₊₁ - bₖ
     bₖ, bₖ₊₁ = bₖ₊₁, bₖ
 
-    # k = n-3 to 2
-    @. cₖ = 2aₙ  # Here, cₖ is cₖ₊₂
+    # k = m-3 to 2
+    @. cₖ = 2aₘ  # Here, cₖ is cₖ₊₂
     @. cₖ₊₁ = 2bₖ + dx * cₖ
 
-    for k in n-3:-1:2
+    for k in m-3:-1:2
         aₖ = selectdim(a, N, k)
         @. bₖ = aₖ + dx * bₖ₊₁ - bₖ
         @. cₖ = 2bₖ₊₁ + dx * cₖ₊₁ - cₖ

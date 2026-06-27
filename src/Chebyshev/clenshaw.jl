@@ -5,20 +5,21 @@ Implements the Clenshaw algorithm to evaluate the `N`-th dimensional Chebyshev
 series with coefficients `a` at a normalized value `x` of its `N`-th dimension.
 """
 function clenshaw(a::Array{T,N}, x::T) where {T,N}
-    n = size(a, N)
+    # m = n+1, where n is the Chebyshev series order along the N-th dimension.
+    m = size(a, N)
     dx = 2x
 
-    aₙ₋₁, aₙ = (selectdim(a, N, i) for i in n-1:n)
+    aₘ₋₁, aₘ = (selectdim(a, N, i) for i in m-1:m)
     bₖ, bₖ₊₁ = (Array{T,N - 1}(undef, a.size[1:N-1]) for _ in 1:2)
 
     # bₖ used on the right-hand side actually represents bₖ₊₂.
     # bₖ₊₂ is ommited to reduce allocations.
 
-    # k = n-2 to 2.
-    @. bₖ = aₙ  # Here, bₖ is bₖ₊₂
-    @. bₖ₊₁ = aₙ₋₁ + dx * bₖ
+    # k = m-2 to 2.
+    @. bₖ = aₘ  # Here, bₖ is bₖ₊₂
+    @. bₖ₊₁ = aₘ₋₁ + dx * bₖ
 
-    for k in n-2:-1:2
+    for k in m-2:-1:2
         aₖ = selectdim(a, N, k)
         @. bₖ = aₖ + dx * bₖ₊₁ - bₖ
         bₖ, bₖ₊₁ = bₖ₊₁, bₖ
