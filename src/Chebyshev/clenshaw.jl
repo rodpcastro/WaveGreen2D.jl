@@ -53,6 +53,20 @@ end
 
 
 """
+    clenshaw(f::ChebyshevSeries{T,N}, x::T) where {T,N} -> ChebyshevSeries{T,N-1}
+
+Implements the Clenshaw algorithm to evaluate the `N`-th dimensional
+Chebyshev series at a normalized value `x` of its `N`-th dimension.
+"""
+function clenshaw(f::ChebyshevSeries{T,N}, x::T) where {T,N}
+    coefs = clenshaw(f.coefs, x)
+    lb = SVector(ntuple(i -> f.lb[i], Val(N - 1)))
+    ub = SVector(ntuple(i -> f.ub[i], Val(N - 1)))
+    return ChebyshevSeries(coefs, lb, ub)
+end
+
+
+"""
     (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N} -> T
 
 Evaluates the Chebyshev series `f` at a point `x`.
