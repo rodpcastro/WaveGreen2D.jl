@@ -80,3 +80,15 @@ function Base.getproperty(obj::WaveParameters, sym::Symbol)
         return getfield(obj, sym)  # Default fieldname
     end
 end
+
+
+function Base.show(io::IO, ::MIME"text/plain", w::WaveParameters)
+    print(
+        io,
+        "Wave parameters: ",
+        "h = $(round(w.h; digits=2)) m, ",
+        "ω = $(round(w.ω; digits=2)) rad/s, ",
+        "k₀ = $(round(w.k₀; digits=2)) m, ",
+        "g = $(round(w.g; digits=2)) m/s²",
+    )
+end
