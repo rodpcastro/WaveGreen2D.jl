@@ -144,13 +144,13 @@ end
 
 
 """
-    ChebyshevCluster(
-        f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...
-    ) where {T,N} -> ChebyshevCluster{T,N,M}
+    ChebyshevCluster(f::ChebyshevSeries{T,N}...) where {T,N} -> ChebyshevCluster{T,N,M}
 
 Simpler constructor for a Chebyshev cluster.
 """
-function ChebyshevCluster(f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...) where {T,N}
+function ChebyshevCluster(
+    f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...
+) where {T,N}
     series = (f¹, fᴹ⁻¹...)
     M = length(series)
     return ChebyshevCluster{T,N,M}(series)
@@ -185,6 +185,16 @@ Checks if the point `x` is in the domain of `f`.
 """
 function contains(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N}
     return all(f.lb .≤ x .≤ f.ub)
+end
+
+
+"""
+    function contains(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N} -> Bool
+
+Checks if the point `x` is in the domain of the dimension `dim` of `f`.
+"""
+function contains(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N}
+    return f.lb[dim] ≤ x ≤ f.ub[dim]
 end
 
 
