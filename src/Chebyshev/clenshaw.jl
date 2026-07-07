@@ -53,15 +53,20 @@ end
 
 
 """
-    clenshaw(f::ChebyshevSeries{T,N}, x::T) where {T,N} -> ChebyshevSeries{T,N-1}
+    reduce(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N} -> ChebyshevSeries{T,N-1}
 
-Implements the Clenshaw algorithm to evaluate the `N`-th dimensional
-Chebyshev series at a normalized value `x` of its `N`-th dimension.
+Evalautes a `N`-dimensional Chebyshev series at a value of `x` of
+its dimension `dim`, thus reducing the series dimension to `N-1`.
 """
-function clenshaw(f::ChebyshevSeries{T,N}, x::T) where {T,N}
-    coefs = clenshaw(f.coefs, x)
-    lb = SVector(ntuple(i -> f.lb[i], Val(N - 1)))
-    ub = SVector(ntuple(i -> f.ub[i], Val(N - 1)))
+function reduce(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N}
+    perm = ntuple(i -> i < dim ? i : (i < N ? i + 1 : dim), Val(N))
+
+    x̄ = normalize(f, x; dim=dim)
+
+    coefs = clenshaw(permutedims(f.coefs, perm), x̄)
+    lb = deleteat(f.lb, dim)
+    ub = deleteat(f.ub, dim)
+
     return ChebyshevSeries(coefs, lb, ub)
 end
 

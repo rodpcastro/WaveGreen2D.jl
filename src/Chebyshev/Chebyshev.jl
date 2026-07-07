@@ -2,7 +2,7 @@ module Chebyshev
 
 export ChebyshevSeries, TransformedChebyshevSeries, ChebyshevCluster, gradient, hessian
 
-using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size, pop
+using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size, pop, deleteat
 
 
 abstract type AbstractChebyshevSeries{T,N} end
@@ -158,12 +158,23 @@ end
 
 
 """
-    normalize(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> SVector{N, T}
+    normalize(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N} -> SVector{N,T}
 
 Converts a point `x` to its normalized coordinates in ``[-1, 1]^N``.
 """
 function normalize(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N}
     @. (2x - f.lb - f.ub) / (f.ub - f.lb)
+end
+
+
+"""
+    normalize(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N} -> T
+
+Converts a point `x` in the dimension `dim` of
+`f` to its normalized coordinates in ``[-1, 1]``
+"""
+function normalize(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N}
+    (2x - f.lb[dim] - f.ub[dim]) / (f.ub[dim] - f.lb[dim])
 end
 
 
