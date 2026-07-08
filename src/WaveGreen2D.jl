@@ -1,5 +1,7 @@
 module WaveGreen2D
 
+export setwave!
+
 using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size
 
 
