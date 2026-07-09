@@ -16,7 +16,7 @@ using FastChebInterp
 using JLD2
 using QuadGK
 using StaticArrays
-using WaveGreen2D.Chebyshev: ChebyshevSeries
+using Chebyshaw: ChebyshevSeries
 
 
 src_dir = joinpath(dirname(@__DIR__), "src")

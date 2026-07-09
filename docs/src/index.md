@@ -10,5 +10,5 @@ Documentation for [WaveGreen2D](https://github.com/rodpcastro/WaveGreen2D.jl).
 ```
 
 ```@autodocs
-Modules = [WaveGreen2D, WaveGreen2D.Chebyshev]
+Modules = [WaveGreen2D]
 ```

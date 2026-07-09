@@ -1,6 +1,7 @@
 using JLD2
 using Test
-using WaveGreen2D.Chebyshev: ChebyshevSeries, gradient, hessian, contains
+using StaticArrays
+using Chebyshaw: ChebyshevSeries, gradient, hessian, contains
 
 
 # This script contais the tests for the Chebyshev series that approximate L₁ and L₂. The

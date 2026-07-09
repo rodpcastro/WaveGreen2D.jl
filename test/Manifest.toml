@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "87d91bbdea0bada7c2c17f64d68f05dbf18807da"
+project_hash = "fea0814a51112470b110e080283bbeceb5dca59d"
 
 [[deps.Aqua]]
 deps = ["Compat", "Pkg", "Test"]
@@ -25,6 +25,12 @@ version = "1.11.0"
 [[deps.CRC32c]]
 uuid = "8bf52ea8-c179-5cab-976a-9e18b702a9bc"
 version = "1.11.0"
+
+[[deps.Chebyshaw]]
+deps = ["StaticArrays"]
+path = "/home/rodpcastro/repos/Chebyshaw"
+uuid = "8daffda2-858b-4296-b9dd-359a97e818af"
+version = "0.0.1"
 
 [[deps.ChunkCodecCore]]
 git-tree-sha1 = "1a3ad7e16a321667698a19e77362b35a1e94c544"

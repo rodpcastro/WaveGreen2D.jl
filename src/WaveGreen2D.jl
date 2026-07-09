@@ -9,10 +9,8 @@ include("wave_params.jl")
 
 
 # Submodules
-include("Chebyshev/Chebyshev.jl")
 include("NearField.jl")
 
-using .Chebyshev
 using .NearField
 
 end
