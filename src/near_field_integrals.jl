@@ -1,5 +1,6 @@
 using JLD2
-using WaveGreen2D.Chebyshev: ChebyshevSeries, gradient, hessian, contains, reduce
+# using WaveGreen2D.Chebyshev: ChebyshevSeries, gradient, hessian, contains, reduce
+using Chebyshaw: ChebyshevSeries, gradient, hessian, contains, reduce
 
 
 # Load Chebyshev series approximations for L₁ and L₂

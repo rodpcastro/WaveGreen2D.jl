@@ -4,6 +4,7 @@ version = "0.0.1"
 authors = ["Rodrigo Castro <code@rpc.aleeas.com>"]
 
 [deps]
+Chebyshaw = "8daffda2-858b-4296-b9dd-359a97e818af"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 

@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "ed4ada4502c58e733ffe70652c6ce03ab246e12e"
+project_hash = "54c72d49a177bebce85fd51572679193e402b1e1"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -15,6 +15,12 @@ version = "1.11.0"
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 version = "1.11.0"
+
+[[deps.Chebyshaw]]
+deps = ["StaticArrays"]
+path = "/home/rodpcastro/repos/Chebyshaw"
+uuid = "8daffda2-858b-4296-b9dd-359a97e818af"
+version = "0.0.1"
 
 [[deps.ChunkCodecCore]]
 git-tree-sha1 = "1a3ad7e16a321667698a19e77362b35a1e94c544"
