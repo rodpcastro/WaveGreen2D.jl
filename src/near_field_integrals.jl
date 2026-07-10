@@ -34,13 +34,15 @@ const integrals = ReducedChebyshevSeries(
 
 
 function setintegrals!(H::Float64)
+    # H ≤ π defines shallow and intermediate waters. H = 0.01 is the minimum value that
+    # could be used to computed the anlytical expressions of L₁ and L₂.
     H̃ = log(H)
 
     if H < 0.01 || H > 7.0
         throw(DomainError(
             H,
-            """The Chebyshev series for the integrals L₁ and\
-               L₂ are accurate only for 0.01 ≤ H ≤ 7"""
+            """The Chebyshev series approximations of the integrals \
+               L₁ and L₂ are accurate only for 0.01 ≤ H ≤ 7"""
         ))
     end
 
