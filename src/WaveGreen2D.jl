@@ -5,6 +5,7 @@ export setwave!
 using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size
 
 
+include("utils.jl")
 include("wave_params.jl")
 
 
