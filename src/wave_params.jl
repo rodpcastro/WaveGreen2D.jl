@@ -47,7 +47,7 @@ function setwave!(;
 
     if !isnothing(frequency) && isnothing(wavenumber)
         ω = Float64(frequency)
-        k₀ = ω^2 / g  # TODO: Find k₀ by solving the dispersion relation
+        k₀ = find_k₀(h, ω, g)
     elseif !isnothing(wavenumber) && isnothing(frequency)
         k₀ = Float64(wavenumber)
         ω = sqrt(k₀ * g * tanh(k₀ * h))
@@ -57,10 +57,12 @@ function setwave!(;
 
     validate_wave(h, ω, k₀, g)
 
-    # Set Chebyshev series approximations for L₁ and L₂ for a fixed parameter H.
+    # Set Chebyshev series approximations of L₁ and L₂ for a fixed parameter H.
     H = h * ω^2 / g
 
     if 0.01 ≤ H ≤ π
+        # H ≤ π defines shallow and intermediate waters. H = 0.01 is the minimum value that
+        # could be used to computed the anlytical expressions of L₁ and L₂.
         NearField.setintegrals!(H)
     end
 
@@ -70,6 +72,24 @@ function setwave!(;
     wave.gravity = g
 
     return wave
+end
+
+
+"""
+    find_k₀(h::Real, ω::Real, g::Real) -> Float64
+
+Finds the wavenumber `k₀` as the root of the dispersion relation ``ω^2 = k g \tanh(k h)``.
+"""
+function find_k₀(h::Real, ω::Real, g::Real)
+    f(k::Real) = k*g * tanh(k*h) - ω^2
+    f′(k::Real) = g * tanh(k*h) + k*g*h * sech(k*h)^2
+
+    # initial estimate for k₀
+    κ₁ = ω/√(g*h)  # shallow water
+    κ₂ = ω^2/g  # deep water
+    k̄₀ = √(κ₁*κ₂)  # geometric mean
+
+    return findroot(f, f′, k̄₀)
 end
 
 
