@@ -12,6 +12,12 @@ const L₂_series = read(cs_jld2, "L₂_series")
 close(cs_jld2)
 
 
+"""
+    ReducedChebyshevSeries
+
+Chebyshev series approximations of L₁ and L₂
+evaluated for a fixed value of ``H = h ω^2 / g``
+"""
 mutable struct ReducedChebyshevSeries
     L₁::ChebyshevSeries{Float64,2}
     L₂::ChebyshevSeries{Float64,2}
@@ -33,9 +39,16 @@ const integrals = ReducedChebyshevSeries(
 )
 
 
+"""
+    setintegrals!(H::Float64) -> Nothing
+
+Sets the Chebyshev series approximations of ``L₁`` and ``L₂`` for a fixed parameter
+``H = h ω^2 / g``. Shallow and intermediate waters are defined by ``H ≤ π``, while
+``H = 0.01`` is the minimum value that could be used to compute the analytical expressions
+of ``L₁`` and ``L₂``. The range ``π < H ≤ 7`` is used solely for comparison with the deep
+water formulation and not used to compute the near field Green function.
+"""
 function setintegrals!(H::Float64)
-    # H ≤ π defines shallow and intermediate waters. H = 0.01 is the minimum value that
-    # could be used to computed the anlytical expressions of L₁ and L₂.
     H̃ = log(H)
 
     if H < 0.01 || H > 7.0
@@ -68,6 +81,7 @@ function setintegrals!(H::Float64)
 end
 
 
+# Evaluates L and ∇L at the field point with respect to the global coordinate system.
 function ∇Λ(L::ChebyshevSeries{Float64,2}, u::SVector{2,Float64}, ∇u::SVector{2,Float64})
     λ, ∇ᵤλ = gradient(L, u)
 
@@ -78,6 +92,7 @@ function ∇Λ(L::ChebyshevSeries{Float64,2}, u::SVector{2,Float64}, ∇u::SVect
 end
 
 
+# Evaluates L, ∇L and HL at the field point with respect to the global coordinate system.
 function HΛ(L::ChebyshevSeries{Float64,2}, u::SVector{2,Float64}, ∇u::SVector{2,Float64})
     λ, ∇ᵤλ, Hᵤλ = hessian(L, u)
 

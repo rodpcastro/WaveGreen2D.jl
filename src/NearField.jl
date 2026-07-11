@@ -6,7 +6,14 @@ using StaticArrays: SVector, SMatrix
 
 include("near_field_integrals.jl")
 
+"""
+    function Gᴺ(
+        field_point::SVector{2,Float64}, source_point::SVector{2,Float64}
+    ) -> Float64, SVector{2,Float64}
 
+Finite-depth free surface Green function for field and source points close to each other,
+which is defined by the dimensionless horizontal distance A ≤ 0.5.
+"""
 function Gᴺ(field_point::SVector{2,Float64}, source_point::SVector{2,Float64})
     # Define variables
     x, z = field_point
@@ -111,4 +118,4 @@ function HGᴺ(field_point::SVector{2,Float64}, source_point::SVector{2,Float64}
     return G, ∇G, HG
 end
 
-end
+end # module

@@ -1,3 +1,14 @@
+"""
+    WaveParameters
+
+Dimensional parameters that define the environmental conditions.
+
+# Fields
+- `depth::Float64`: water depth (m)
+- `frequency::Float64`: wave frequency (rad/s)
+- `wavenumber::Float64`: wavenumber (1/m⁻¹)
+- `gravity::Float64`: acceleration of gravity (m/s²)
+"""
 mutable struct WaveParameters
     depth::Float64
     frequency::Float64
@@ -17,6 +28,7 @@ mutable struct WaveParameters
 end
 
 
+# Avoid non-physical values for the wave parameters.
 function validate_wave(
     depth::Real, frequency::Real, wavenumber::Real, gravity::Real
 )
@@ -36,24 +48,16 @@ end
 const wave = WaveParameters(NaN, NaN, NaN, NaN)
 
 
-function setwave!(;
-    depth::Real,
-    frequency::Union{Real,Nothing}=nothing,
-    wavenumber::Union{Real,Nothing}=nothing,
-    gravity::Real=9.80665,
-)
+"""
+    function setwave!(; depth::Real, frequency::Real, gravity::Real=9.80665) -> Nothing
+
+Sets the parameters that define the environmental conditions.
+"""
+function setwave!(; depth::Real, frequency::Real, gravity::Real=9.80665)
     h = Float64(depth)
     g = Float64(gravity)
-
-    if !isnothing(frequency) && isnothing(wavenumber)
-        ω = Float64(frequency)
-        k₀ = find_k₀(h, ω, g)
-    elseif !isnothing(wavenumber) && isnothing(frequency)
-        k₀ = Float64(wavenumber)
-        ω = sqrt(k₀ * g * tanh(k₀ * h))
-    else
-        error("Either frequency or wavenumber must be given.")
-    end
+    ω = Float64(frequency)
+    k₀ = find_k₀(h, ω, g)
 
     validate_wave(h, ω, k₀, g)
 
@@ -61,8 +65,8 @@ function setwave!(;
     H = h * ω^2 / g
 
     if 0.01 ≤ H ≤ π
-        # H ≤ π defines shallow and intermediate waters. H = 0.01 is the minimum value that
-        # could be used to computed the anlytical expressions of L₁ and L₂.
+        # H ≤ π defines shallow and intermediate waters. H = 0.01 is the minimum value
+        # that could be used to compute the anlytical expressions of L₁ and L₂.
         NearField.setintegrals!(H)
     end
 
@@ -71,16 +75,18 @@ function setwave!(;
     wave.wavenumber = k₀
     wave.gravity = g
 
-    return wave
+    @info wave
+
+    return nothing
 end
 
 
 """
     find_k₀(h::Real, ω::Real, g::Real) -> Float64
 
-Finds the wavenumber `k₀` as the root of the dispersion relation ``ω^2 = k g \tanh(k h)``.
+Finds the wavenumber `k₀` from the dispersion relation ``ω^2 = k g \\tanh(k h)``.
 """
-function find_k₀(h::Real, ω::Real, g::Real)
+function find_k₀(h::Real, ω::Real, g::Real=9.80665)
     f(k::Real) = k*g * tanh(k*h) - ω^2
     f′(k::Real) = g * tanh(k*h) + k*g*h * sech(k*h)^2
 
@@ -112,10 +118,14 @@ end
 function Base.show(io::IO, ::MIME"text/plain", w::WaveParameters)
     print(
         io,
-        "Wave parameters: ",
+        "Wave parameters ",
         "h = $(round(w.h; digits=2)) m, ",
         "ω = $(round(w.ω; digits=2)) rad/s, ",
-        "k₀ = $(round(w.k₀; digits=2)) m, ",
         "g = $(round(w.g; digits=2)) m/s²",
     )
+end
+
+
+function Base.show(io::IO, w::WaveParameters)
+    Base.show(io, MIME"text/plain"(), w)
 end
