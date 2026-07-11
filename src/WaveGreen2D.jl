@@ -14,4 +14,4 @@ include("NearField.jl")
 
 using .NearField
 
-end
+end # module
