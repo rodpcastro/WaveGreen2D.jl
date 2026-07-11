@@ -17,7 +17,7 @@ Newton-Raphson method.
 # Warnings
 - A warning is raised if the maximum number of iterations is reached without convergence.
 """
-function findroot(y, y′, x₀::Real, tol::Real=eps(), nmax::Int=50)
+function findroot(y, y′, x₀::Real, tol::Real=1e-12, nmax::Int=50)
     xᵢ = x₀
     yᵢ = y(x₀)
     imax = 0
@@ -34,7 +34,7 @@ function findroot(y, y′, x₀::Real, tol::Real=eps(), nmax::Int=50)
     end
 
     if !converged
-        @warn "Reached maximum number of iterations ($nmax) without convergence"
+        @warn "Reached maximum number of iterations ($nmax) without convergence (y = $yᵢ)"
     end
 
     return xᵢ
