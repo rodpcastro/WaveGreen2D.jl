@@ -40,7 +40,9 @@ function mod_quadgk(f, a, b; rtol=sqrt(eps()), atol=0, maxevals=10^7, order=7)
     ∫f = err = nothing
 
     for qo in qorder_vals
-        ∫f, err, count = quadgk_count(f, a, b; rtol=rtol, atol=atol, maxevals=maxevals, order=qo)
+        ∫f, err, count = quadgk_count(
+            f, a, b; rtol=rtol, atol=atol, maxevals=maxevals, order=qo
+        )
         if count < maxevals
             return ∫f, err
         end
@@ -211,7 +213,9 @@ for m in 2:ndomains
     axes[m].yticksvisible = false
 end
 
-supertitle = Label(fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20)
+supertitle = Label(
+    fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20
+)
 
 for m in 1:ndomains
     coefs = L_series[m].coefs
@@ -261,7 +265,9 @@ for m in 2:ndomains
     axes[m].yticksvisible = false
 end
 
-supertitle = Label(fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20)
+supertitle = Label(
+    fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20
+)
 
 for m in 1:ndomains
     coefs = L_series[m].coefs
