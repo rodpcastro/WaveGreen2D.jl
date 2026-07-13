@@ -53,7 +53,7 @@ const wave = WaveParameters(NaN, NaN, NaN)
 
 
 """
-    function setwave!(depth::Real, frequency::Real, gravity::Real=9.80665) -> Nothing
+    setwave!(depth::Real, frequency::Real, gravity::Real=9.80665) -> Nothing
 
 Sets the parameters that define the environmental conditions.
 """
