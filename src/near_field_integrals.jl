@@ -16,7 +16,7 @@ close(cs_jld2)
     ReducedChebyshevSeries
 
 Chebyshev series approximations of L₁ and L₂
-evaluated for a fixed value of ``H = h ω^2 / g``
+evaluated for a fixed value of ``H = h ω^2 / g``.
 """
 mutable struct ReducedChebyshevSeries
     L₁::ChebyshevSeries{Float64,2}

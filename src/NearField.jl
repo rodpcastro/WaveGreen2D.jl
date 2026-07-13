@@ -7,7 +7,7 @@ using StaticArrays: SVector, SMatrix
 include("near_field_integrals.jl")
 
 """
-    function Gᴺ(
+    Gᴺ(
         field_point::SVector{2,Float64}, source_point::SVector{2,Float64}
     ) -> Float64, SVector{2,Float64}
 
