@@ -53,6 +53,25 @@ end
 
 
 """
+    reduce(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N} -> ChebyshevSeries{T,N-1}
+
+Evalautes a `N`-dimensional Chebyshev series at a value of `x` of
+its dimension `dim`, thus reducing the series dimension to `N-1`.
+"""
+function reduce(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N}
+    perm = ntuple(i -> i < dim ? i : (i < N ? i + 1 : dim), Val(N))
+
+    x̄ = normalize(f, x; dim=dim)
+
+    coefs = clenshaw(permutedims(f.coefs, perm), x̄)
+    lb = deleteat(f.lb, dim)
+    ub = deleteat(f.ub, dim)
+
+    return ChebyshevSeries(coefs, lb, ub)
+end
+
+
+"""
     (f::ChebyshevSeries{T, N})(x::SVector{N, T}) where {T, N} -> T
 
 Evaluates the Chebyshev series `f` at a point `x`.

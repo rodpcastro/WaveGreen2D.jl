@@ -1,6 +1,8 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Chebyshaw = "8daffda2-858b-4296-b9dd-359a97e818af"
 JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
-JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
+QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

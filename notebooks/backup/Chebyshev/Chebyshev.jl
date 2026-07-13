@@ -2,22 +2,22 @@ module Chebyshev
 
 export ChebyshevSeries, TransformedChebyshevSeries, ChebyshevCluster, gradient, hessian
 
-using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size, pop
+using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size, pop, deleteat
 
 
 abstract type AbstractChebyshevSeries{T,N} end
 
 
 """
-    ChebyshevSeries{T, N}
+    ChebyshevSeries{T,N}
 
 The Chebyshev series approximation of a `N`-dimensional
 function defined in a bounded domain.
 
 # Fields
-- `coefs::Array{T, N}`: coefficients
-- `lb::SVector{N, T}`: domain lower bound
-- `ub::SVector{N, T}`: domain upper bound
+- `coefs::Array{T,N}`: coefficients
+- `lb::SVector{N,T}`: domain lower bound
+- `ub::SVector{N,T}`: domain upper bound
 """
 struct ChebyshevSeries{T,N} <: AbstractChebyshevSeries{T,N}
     coefs::Array{T,N}
@@ -27,7 +27,7 @@ end
 
 
 """
-    ChebyshevSeries(coefs::Array{T, 1}, lb::T, ub::T) where T -> ChebyshevSeries{T, 1}
+    ChebyshevSeries(coefs::Array{T,1}, lb::T, ub::T) where T -> ChebyshevSeries{T,1}
 
 Simpler constructor for one-dimensional Chebyshev series.
 """
@@ -37,7 +37,7 @@ end
 
 
 """
-    ChebyshevSeries(coefs::Array{T, 0}, lb::SVector{0, T}, ub::SVector{0, T}) where T -> T
+    ChebyshevSeries(coefs::Array{T,0}, lb::SVector{0,T}, ub::SVector{0,T}) where T -> T
 
 A zero-dimensional Chebyshev series is just the coefficient.
 """
@@ -88,12 +88,12 @@ end
 
 
 """
-    TransformedChebyshevSeries{T, N}
+    TransformedChebyshevSeries{T,N}
 
 The transformation of a Chebyshev series in the domain `u` to the domain `x`.
 
 # Fields
-- `series::ChebyshevSeries{T, N}`: series in the domain `u`
+- `series::ChebyshevSeries{T,N}`: series in the domain `u`
 - `u::F`: transformation function ``u(x)``
 - `∇u::G`: transformation function gradient ``∇u(x)``
 - `Hu::H`: transformation function hessian ``\\mathrm{H}u(x)``
@@ -115,8 +115,8 @@ end
 
 """
     TransformedChebyshevSeries(
-        series::ChebyshevSeries{T, N}
-    ) where {T, N} -> TransformedChebyshevSeries{T, N}
+        series::ChebyshevSeries{T,N}
+    ) where {T,N} -> TransformedChebyshevSeries{T,N}
 
 Identically transformed Chebyshev series.
 """
@@ -136,7 +136,7 @@ end
 A collection of `M` equidimensional `ChebyshevSeries` objects.
 
 # Fields
-- `series::NTuple{M, ChebyshevSeries{T, N}}`: `N`-dimensional Chebyshev series
+- `series::NTuple{M,ChebyshevSeries{T,N}}`: `N`-dimensional Chebyshev series
 """
 struct ChebyshevCluster{T,N,M} <: AbstractChebyshevSeries{T,N}
     series::NTuple{M,ChebyshevSeries{T,N}}
@@ -144,13 +144,13 @@ end
 
 
 """
-    ChebyshevCluster(
-        f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...
-    ) where {T,N} -> ChebyshevCluster{T,N,M}
+    ChebyshevCluster(f::ChebyshevSeries{T,N}...) where {T,N} -> ChebyshevCluster{T,N,M}
 
 Simpler constructor for a Chebyshev cluster.
 """
-function ChebyshevCluster(f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...) where {T,N}
+function ChebyshevCluster(
+    f¹::ChebyshevSeries{T,N}, fᴹ⁻¹::ChebyshevSeries{T,N}...
+) where {T,N}
     series = (f¹, fᴹ⁻¹...)
     M = length(series)
     return ChebyshevCluster{T,N,M}(series)
@@ -158,7 +158,7 @@ end
 
 
 """
-    normalize(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> SVector{N, T}
+    normalize(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N} -> SVector{N,T}
 
 Converts a point `x` to its normalized coordinates in ``[-1, 1]^N``.
 """
@@ -168,12 +168,33 @@ end
 
 
 """
-    contains(f::ChebyshevSeries{T, N}, x::SVector{N, T}) where {T, N} -> Bool
+    normalize(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N} -> T
+
+Converts a point `x` in the dimension `dim` of
+`f` to its normalized coordinates in ``[-1, 1]``
+"""
+function normalize(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N}
+    (2x - f.lb[dim] - f.ub[dim]) / (f.ub[dim] - f.lb[dim])
+end
+
+
+"""
+    contains(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N} -> Bool
 
 Checks if the point `x` is in the domain of `f`.
 """
 function contains(f::ChebyshevSeries{T,N}, x::SVector{N,T}) where {T,N}
     return all(f.lb .≤ x .≤ f.ub)
+end
+
+
+"""
+    function contains(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N} -> Bool
+
+Checks if the point `x` is in the domain of the dimension `dim` of `f`.
+"""
+function contains(f::ChebyshevSeries{T,N}, x::T; dim::Int=N) where {T,N}
+    return f.lb[dim] ≤ x ≤ f.ub[dim]
 end
 
 
@@ -189,7 +210,7 @@ end
 
 
 """
-    contains(h::ChebyshevCluster{T, N, M}, x::SVector{N, T}) where {T, N, M} -> Int
+    contains(h::ChebyshevCluster{T,N,M}, x::SVector{N,T}) where {T,N,M} -> Int
 
 Finds the index of the series in the cluster `h` where the
 point `x` is located. Returns `0` if `x` is not in `h`.

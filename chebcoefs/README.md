@@ -1,7 +1,4 @@
 # Chebyshev coefficients
-Coefficients for Chebyshev series defined in the main code are obtained by the [`wavegreen_chebseries.jl`][wavecoefs] script, while those created for testing are calculated by [`test_coefficients.jl`][testcoefs]. All coefficients are computed with the package [FastChebInterp.jl].
-
-## Evaluating $L_1$ and $L_2$
 The integrals $L_1$ and $L_2$ are the main objects of approximation by Chebyshev series in WaveGreen2D. Their analytical expressions are given in detail [here][wavegreen2d]. Their numerical evaluation in Julia, with the [QuadGK.jl] package, required some experiments due to the singular nature of the integrands.
 
 The numerical experiment was performed with [BenchmarkTools.jl], and studied how the quadrature `order`, parameter of [`quadgk`][quadgk], influences execution time, memory allocated and number of allocations. Each quadrature was executed for 1000 random points in the domain of interest, and the averages are presented in the following image, created with [Makie.jl].
@@ -36,7 +33,7 @@ The maximum absolute values of the coefficients along each dimension of the two 
     <img src="images/l2_maxcoefs.svg" alt="L2 maximum absolute coefficients">
 </p>
 
-The coefficients for the series that approximate $L_1$ and $L_2$, together with the lower and upper bounds of each subdomain, are computed by the [`wavegreen_chebseries.jl`][wavecoefs] script and saved as [`ChebyshevSeries`][chebseries] objects in the file [`chebyshev_series.jld2`][wavegreen2d] with the help of the [JLD2.jl] library.
+The coefficients for the series that approximate $L_1$ and $L_2$, together with the lower and upper bounds of each subdomain, are computed by the [`create_chebyseries.jl`][chebyseries] script and saved as [`ChebyshevSeries`][Chebyshaw.jl] objects in the file [`chebyshev_series.jld2`][wavegreen2d] with the help of the [JLD2.jl] library.
 
 ## References
 1. Steven Johnson. 2021. FastChebInterp.jl. https://github.com/JuliaMath/FastChebInterp.jl
@@ -44,13 +41,12 @@ The coefficients for the series that approximate $L_1$ and $L_2$, together with 
 
 <!--Links-->
 [wavegreen2d]: https://github.com/rodpcastro/WaveGreen2D.jl/tree/main/src
-[wavecoefs]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/chebcoefs/wavegreen_chebseries.jl
-[testcoefs]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/chebcoefs/test_coefficients.jl
+[chebyseries]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/chebcoefs/create_chebyseries.jl
 [quadorder]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/chebcoefs/quadrature_order.jl
-[QuadGK.jl]: https://github.com/JuliaMath/QuadGK.jl
 [quadgk]: https://juliamath.github.io/QuadGK.jl/stable/api/#quadgk
+[QuadGK.jl]: https://github.com/JuliaMath/QuadGK.jl
+[Chebyshaw.jl]: https://github.com/rodpcastro/Chebyshaw.jl
 [FastChebInterp.jl]: https://github.com/JuliaMath/FastChebInterp.jl
 [BenchmarkTools.jl]: https://github.com/JuliaCI/BenchmarkTools.jl
 [Makie.jl]: https://docs.makie.org/
 [JLD2.jl]: https://juliaio.github.io/JLD2.jl/dev/
-[chebseries]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/src/Chebyshev/Chebyshev.jl

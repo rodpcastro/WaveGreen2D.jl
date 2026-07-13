@@ -16,92 +16,29 @@ using FastChebInterp
 using JLD2
 using QuadGK
 using StaticArrays
-using WaveGreen2D.Chebyshev: ChebyshevSeries
+using Chebyshaw: ChebyshevSeries
 
 
-src_dir = joinpath(dirname(@__DIR__), "src")
+root_dir = dirname(@__DIR__)
+include(joinpath(root_dir, "test", "integrals.jl"))
+
+src_dir = joinpath(root_dir, "src")
 img_dir = joinpath(@__DIR__, "images")
 
 cheb_file = joinpath(src_dir, "chebyshev_series.jld2")
-
-tol = eps()
-imax = 1e4  # 1e3 also works
-qorder = 26
-
-
-function mod_quadgk(f, a, b; rtol=sqrt(eps()), atol=0, maxevals=10^7, order=7)
-    # Put 26 as the first try.
-    qorder_vals = [[26, 25, 24]; collect(27:34)]
-
-    if !(order in qorder_vals)
-        pushfirst!(qorder_vals, order)
-    end
-
-    ∫f = err = nothing
-
-    for qo in qorder_vals
-        ∫f, err, count = quadgk_count(f, a, b; rtol=rtol, atol=atol, maxevals=maxevals, order=qo)
-        if count < maxevals
-            return ∫f, err
-        end
-    end
-
-    @warn "Reached the maximum number of function evaluations" #maxlog=1
-
-    return ∫f, err
-end
-
-
-function L₁H(x::AbstractVector{<:Real})
-    A, B, H = x
-
-    f(u) = (u + H) / (u - H - (u + H) * exp(-2u))
-    g(u) = exp(-u * (2 + B)) + exp(-u * (2 - B))
-    h(u) = cos(u * A)
-    p(u) = (f(u) * g(u) * h(u) + exp(-u)) / u
-
-    path = (0.0, H + im, H + 1.0, Inf)
-
-    y = mod_quadgk(p, path[1], path[2]; rtol=tol, atol=tol, maxevals=imax, order=qorder)[1]
-    y += mod_quadgk(p, path[2], path[3]; rtol=tol, atol=tol, maxevals=imax, order=qorder)[1]
-    y += mod_quadgk(p, path[3], path[4]; rtol=tol, atol=tol, maxevals=imax)[1]
-
-    return real(y)
-end
-
-
-function L₂H(x::AbstractVector{<:Real})
-    A, B, H = x
-
-    f(u) = (u + H) / (u - H - (u + H) * exp(-2u))
-    g(u) = (u + H)^2 / ((u - H)^2 - (u^2 - H^2) * exp(-2u))
-    p(u) = exp(-u * (2 + B))
-    q(u) = exp(-u * (4 - B))
-    r(u) = cos(u * A)
-
-    h(u) = (f(u) * p(u) + g(u) * q(u)) * r(u) / u
-
-    path = (0.0, H + im, H + 1.0, Inf)
-
-    y = mod_quadgk(h, path[1], path[2]; rtol=tol, atol=tol, maxevals=imax, order=qorder)[1]
-    y += mod_quadgk(h, path[2], path[3]; rtol=tol, atol=tol, maxevals=imax, order=qorder)[1]
-    y += mod_quadgk(h, path[3], path[4]; rtol=tol, atol=tol, maxevals=imax)[1]
-
-    return real(y)
-end
 
 
 function L₁C(x::AbstractVector{<:Real})
     A, B, C = x  # C = ln(H)
     x̄ = [A, B, exp(C)]
-    return L₁H(x̄)
+    return L₁(x̄)
 end
 
 
 function L₂C(x::AbstractVector{<:Real})
     A, B, C = x  # C = ln(H)
     x̄ = [A, B, exp(C)]
-    return L₂H(x̄)
+    return L₂(x̄)
 end
 
 
@@ -116,14 +53,14 @@ end
 # make the number of coefficients in each domain approximately the same.
 
 # Functions used in each domain
-L₁_funcs = [L₁H, L₁C, L₁C]
+L₁_funcs = [L₁, L₁C, L₁C]
 L₂_funcs = [L₂C, L₂C, L₂C, L₂C]
 
 # Domains lower and upper bounds
 L₁_Hvals = [1e-2, 1.64, π, 7.0]
 L₂_Hvals = [1e-2, 0.4, 1.5, π, 7.0]
 
-# An extra domain (π ≤ H ≤ 7) is added for comparison with the deep water results.
+# An extra domain (π ≤ H ≤ 7) is added for comparison with the deep waters formulation.
 L₁_lb = [
     SA[0.0, 0.0, L₁_Hvals[1]],
     SA[0.0, 0.0, log(L₁_Hvals[2])],
@@ -211,7 +148,9 @@ for m in 2:ndomains
     axes[m].yticksvisible = false
 end
 
-supertitle = Label(fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20)
+supertitle = Label(
+    fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20
+)
 
 for m in 1:ndomains
     coefs = L_series[m].coefs
@@ -261,7 +200,9 @@ for m in 2:ndomains
     axes[m].yticksvisible = false
 end
 
-supertitle = Label(fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20)
+supertitle = Label(
+    fig[0, :], "Maximum coefficient (in absolute value) along each dimension", fontsize=20
+)
 
 for m in 1:ndomains
     coefs = L_series[m].coefs

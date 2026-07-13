@@ -13,6 +13,5 @@ using JET
     end
 
     # Write your tests here.
-    include("test_chebyshev.jl")
-    include("test_chebseries.jl")
+    include("test_near_field_integrals.jl")
 end

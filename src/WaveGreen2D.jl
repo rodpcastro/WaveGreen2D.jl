@@ -1,6 +1,17 @@
 module WaveGreen2D
 
-include("Chebyshev/Chebyshev.jl")
-using .Chebyshev
+export setwave!
 
-end
+using StaticArrays: SVector, SMatrix, MMatrix, SArray, Size
+
+
+include("utils.jl")
+include("wave_params.jl")
+
+
+# Submodules
+include("NearField.jl")
+
+using .NearField
+
+end # module
