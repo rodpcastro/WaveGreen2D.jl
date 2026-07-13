@@ -28,7 +28,7 @@ version = "1.11.0"
 
 [[deps.Chebyshaw]]
 deps = ["StaticArrays"]
-path = "/home/rodpcastro/repos/Chebyshaw"
+git-tree-sha1 = "5d5bd3cd207d9aeed6ed3a1cdb908e2845c013df"
 uuid = "8daffda2-858b-4296-b9dd-359a97e818af"
 version = "0.0.1"
 

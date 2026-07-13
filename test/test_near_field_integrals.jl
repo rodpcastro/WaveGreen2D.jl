@@ -13,7 +13,7 @@ include("integrals.jl")
 Random.seed!(18)
 
 # Number of testing points
-npts = 10
+npts = 20
 
 # Tolerances
 tol_L = 10^2 * eps()

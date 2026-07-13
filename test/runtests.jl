@@ -12,6 +12,6 @@ using JET
         JET.test_package(WaveGreen2D; target_modules=(WaveGreen2D,))
     end
 
-    # Write your tests here.
+    include("test_utils.jl")
     include("test_near_field_integrals.jl")
 end
