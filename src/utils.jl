@@ -34,7 +34,7 @@ function findroot(y, y′, x₀::Real, tol::Real=1e-12, nmax::Int=50)
     end
 
     if !converged
-        @warn "Reached maximum number of iterations ($nmax) without convergence (y = $yᵢ)"
+        @warn "Reached maximum number of iterations without convergence"
     end
 
     return xᵢ
