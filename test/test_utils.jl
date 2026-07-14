@@ -1,6 +1,5 @@
 # Test accessory functions stored in utils.jl
 
-using Test
 using WaveGreen2D: findroot
 
 

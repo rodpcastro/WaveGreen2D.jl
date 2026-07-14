@@ -13,5 +13,6 @@ using JET
     end
 
     include("test_utils.jl")
+    include("test_wave_params.jl")
     include("test_near_field_integrals.jl")
 end

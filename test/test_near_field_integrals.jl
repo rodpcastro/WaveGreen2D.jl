@@ -3,7 +3,6 @@
 using Chebyshaw: gradient, hessian
 using Random
 using StaticArrays
-using Test
 using WaveGreen2D.NearField: integrals, setintegrals!
 
 include("integrals.jl")
