@@ -80,7 +80,7 @@ function setwave!(; depth::Real, frequency::Real, gravity::Real=9.80665)
         NearField.setintegrals!(H)
     end
 
-    @info wave
+    @info "$wave"
 
     return nothing
 end
