@@ -1,4 +1,15 @@
-using WaveGreen2D: nevamodes, wave, validate_wave, find_k₀, find_kₙ
+using WaveGreen2D: nevamodes, wave, WaveParameters, validate_wave, find_k₀, find_kₙ
+
+
+@testset "Wave parameters object" begin
+    # Only depth, frequency and acceleration of gravity can be defined independently
+    test_wave = WaveParameters(1.0, 2.0, 3.0)
+    @test isnan(wave.k₀)
+    @test all(isnan.(test_wave.kₙ))
+
+    # Trying to define all the parameters should throw an error
+    @test_throws MethodError WaveParameters(1.0, 2.0, 3.0, 4.0, ntuple(i -> i^2, nevamodes))
+end
 
 
 @testset "Find wavenumber" begin
