@@ -45,12 +45,9 @@ end
     io = IOBuffer()
     setwave!(depth=30.0, frequency=0.7, gravity=9.8)
 
-    wave_long = sprint((io, x) -> show(io, MIME"text/plain"(), x), wave)
-    wave_short = sprint((io, x) -> show(io, x), wave)
-
-    @test repr(wave) == "Wave parameters h = 30.0 m, ω = 0.7 rad/s, g = 9.8 m/s²"
-    @test repr("text/plain", wave) == """Wave parameters \
-                                         h = 30.0 m, ω = 0.7 rad/s, g = 9.8 m/s²"""
+    @test sprint(show, wave) == "Wave parameters h = 30.0 m, ω = 0.7 rad/s, g = 9.8 m/s²"
+    @test sprint(show, MIME"text/plain"(), wave) == """Wave parameters h = 30.0 m, \
+                                                       ω = 0.7 rad/s, g = 9.8 m/s²"""
 end
 
 
