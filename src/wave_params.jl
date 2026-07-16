@@ -2,6 +2,8 @@
 const nevamodes = 20
 
 
+# TODO: Make WaveParameters abstract. Create two imutable structs: FiniteDepthWave and InfiniteDepthWave.
+# Points parameters are calculated according to the type of wave and if they are in the near or far field.
 """
     WaveParameters
 
