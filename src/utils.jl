@@ -1,14 +1,13 @@
 """
     findroot(y, y′, x₀::Real, tol::Real=eps(), nmax::Int=50) -> Float64
 
-Finds the root of `y` closer to `x₀`, if this root exists, using the
-Newton-Raphson method.
+Finds the root of `y` closer to `x₀`, if the root exists, using the Newton-Raphson method.
 
 # Arguments
 - `y`: the function to find the root of
 - `y′`: the derivative of `y`
 - `x₀::Real`: initial estimate for the root of `y`
-- `tol::Real=eps()`: tolerance for the absolute error
+- `tol::Real=1e-10`: tolerance for the absolute error of `y(x)`
 - `nmax::Int=50`: maximum number of iterations
 
 # Returns
@@ -17,7 +16,7 @@ Newton-Raphson method.
 # Warnings
 - A warning is raised if the maximum number of iterations is reached without convergence.
 """
-function findroot(y, y′, x₀::Real, tol::Real=1e-12, nmax::Int=50)
+function findroot(y, y′, x₀::Real, tol::Real=1e-10, nmax::Int=50)
     xᵢ = x₀
     yᵢ = y(x₀)
     imax = 0
