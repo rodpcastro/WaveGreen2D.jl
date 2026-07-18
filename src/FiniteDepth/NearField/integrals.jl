@@ -1,10 +1,12 @@
-# Evaluates L
+# These three functions evaluate the integrals L₁ and L₂. The gradient and the hessian are
+# computed with respect to the field points coordinates.
+
+
 function Gᴸ(L::ChebyshevSeries{Float64,2}, u::SVector{2,Float64})
     return L(u)
 end
 
 
-# Evaluates L and ∇L at the field point with respect to the global coordinate system.
 function ∇Gᴸ(L::ChebyshevSeries{Float64,2}, u::SVector{2,Float64}, ∇u::SVector{2,Float64})
     λ, ∇ᵤλ = gradient(L, u)
 
@@ -15,7 +17,6 @@ function ∇Gᴸ(L::ChebyshevSeries{Float64,2}, u::SVector{2,Float64}, ∇u::SVe
 end
 
 
-# Evaluates L, ∇L and HL at the field point with respect to the global coordinate system.
 function HGᴸ(L::ChebyshevSeries{Float64,2}, u::SVector{2,Float64}, ∇u::SVector{2,Float64})
     λ, ∇ᵤλ, Hᵤλ = hessian(L, u)
 

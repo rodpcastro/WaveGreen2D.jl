@@ -1,4 +1,7 @@
-# Evaluates the influence of the Rankine sources
+# These three functions evaluate the Rankine source influence. The gradient and the hessian
+# are computed with respect to the field points coordinates.
+
+
 function Gᴿ(s::Float64)
     return log(s)
 end

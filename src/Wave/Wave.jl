@@ -1,5 +1,12 @@
+module Wave
+
+export create_wave
+
 using Chebyshaw
 using JLD2
+
+
+include("root.jl")
 
 
 abstract type AbstractWaterWave end
@@ -197,3 +204,5 @@ end
 function Base.show(io::IO, w::AbstractWaterWave)
     Base.show(io, MIME"text/plain"(), w)
 end
+
+end # module

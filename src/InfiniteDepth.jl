@@ -1,0 +1,3 @@
+module InfiniteDepth
+
+end # module

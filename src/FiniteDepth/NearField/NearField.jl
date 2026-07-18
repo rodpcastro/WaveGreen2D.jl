@@ -2,7 +2,7 @@ module NearField
 
 using Chebyshaw
 using StaticArrays: SVector, SMatrix
-using WaveGreen2D: FiniteDepthWave
+using WaveGreen2D.Wave: FiniteDepthWave
 
 
 include("rankine.jl")
@@ -10,16 +10,10 @@ include("fzerone.jl")
 include("integrals.jl")
 
 
-"""
-    Gᴺ(
-        wave::FiniteDepthWave,
-        field_point::SVector{2,Float64},
-        source_point::SVector{2,Float64},
-    ) -> Float64
+# Finite-depth free surface Green function for field and source points close to each other,
+# which is defined by the dimensionless horizontal distance A ≤ 0.5.
 
-Finite-depth free surface Green function for field and source points close to each other,
-which is defined by the dimensionless horizontal distance ``A ≤ 0.5``.
-"""
+
 function Gᴺ(
     wave::FiniteDepthWave, field_point::SVector{2,Float64}, source_point::SVector{2,Float64}
 )

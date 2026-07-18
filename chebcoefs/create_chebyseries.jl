@@ -22,10 +22,10 @@ using Chebyshaw: ChebyshevSeries
 root_dir = dirname(@__DIR__)
 include(joinpath(root_dir, "test", "integrals.jl"))
 
-src_dir = joinpath(root_dir, "src")
+wave_dir = joinpath(root_dir, "src", "Wave")
 img_dir = joinpath(@__DIR__, "images")
 
-cheb_file = joinpath(src_dir, "chebyshev_series.jld2")
+cheb_file = joinpath(wave_dir, "chebyshev_series.jld2")
 
 
 function L₁C(x::AbstractVector{<:Real})
@@ -120,7 +120,7 @@ coefs₂ = generate_coefficients(L₂_funcs[i], L₂_n[i], L₂_lb[i], L₂_ub[i
 L₂_series[i] = ChebyshevSeries(coefs₂, L₂_lb[i], L₂_ub[i])
 
 @save cheb_file L₁_series L₂_series
-println("Chebyshev series saved at $src_dir")
+println("Chebyshev series saved at $wave_dir")
 
 println("Plotting coefficients maximum absolute values")
 mkpath(img_dir)

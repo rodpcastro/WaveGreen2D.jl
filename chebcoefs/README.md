@@ -33,7 +33,7 @@ The maximum absolute values of the coefficients along each dimension of the two 
     <img src="images/l2_maxcoefs.svg" alt="L2 maximum absolute coefficients">
 </p>
 
-The coefficients for the series that approximate $L_1$ and $L_2$, together with the lower and upper bounds of each subdomain, are computed by the [`create_chebyseries.jl`][chebyseries] script and saved as [`ChebyshevSeries`][Chebyshaw.jl] objects in the file [`chebyshev_series.jld2`][wavegreen2d] with the help of the [JLD2.jl] library.
+The coefficients for the series that approximate $L_1$ and $L_2$, together with the lower and upper bounds of each subdomain, are computed by the [`create_chebyseries.jl`][chebyseries] script and saved as [`ChebyshevSeries`][Chebyshaw.jl] objects in the file [`chebyshev_series.jld2`][wavesubmod] with the help of the [JLD2.jl] library.
 
 ## References
 1. Steven Johnson. 2021. FastChebInterp.jl. https://github.com/JuliaMath/FastChebInterp.jl
@@ -41,6 +41,7 @@ The coefficients for the series that approximate $L_1$ and $L_2$, together with 
 
 <!--Links-->
 [wavegreen2d]: https://github.com/rodpcastro/WaveGreen2D.jl/tree/main/src
+[wavesubmod]: https://github.com/rodpcastro/WaveGreen2D.jl/tree/main/src/Wave
 [chebyseries]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/chebcoefs/create_chebyseries.jl
 [quadorder]: https://github.com/rodpcastro/WaveGreen2D.jl/blob/main/chebcoefs/quadrature_order.jl
 [quadgk]: https://juliamath.github.io/QuadGK.jl/stable/api/#quadgk
