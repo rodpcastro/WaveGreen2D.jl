@@ -1,6 +1,7 @@
 module NearField
 
 using Chebyshaw
+using SpecialFunctions
 using StaticArrays: SVector, SMatrix
 using WaveGreen2D.Wave: FiniteDepthWave
 
@@ -45,7 +46,6 @@ function Gᴺ(
 
     V₃ = K * v₃
     X = K * R
-    Z = V₃ - im*X
 
     # Rankine sources
     s₁ = r₁ / h
@@ -56,15 +56,20 @@ function Gᴺ(
     Gᴿ₂ = Gᴿ(s₂)
     Gᴿ₃ = Gᴿ(s₃)
 
+    # Function F₀
+    t = SVector{2,Float64}(X, V₃)
+
+    F₀ = Φ₀(t)
+
     # Integrals L₁ and L₂
     u₁ = SVector{2,Float64}(A, B₁)
     u₂ = SVector{2,Float64}(A, B₂)
 
-    L₁ = Gᴸ(wave.L₁, u₁)
-    L₂ = Gᴸ(wave.L₂, u₂)
+    L₁ = Λ(wave.L₁, u₁)
+    L₂ = Λ(wave.L₂, u₂)
 
     # Combine components
-    G = Gᴿ₁ + Gᴿ₂ + Gᴿ₃ - L₁ - L₂ + 2*log(H)
+    G = Gᴿ₁ + Gᴿ₂ + Gᴿ₃ - F₀ - L₁ - L₂ + 2*log(H)
 
     return G
 end
@@ -117,10 +122,11 @@ function ∇Gᴺ(
     ∇B₁ = sign(v̄₁) / h
     ∇B₂ = 1 / h
 
-    V₃ = K * v₃
     X = K * R
-    Z = V₃ - im*X
-    ∇Z = SVector{2, ComplexF64}(-im*K*∇R, -K)
+    ∇X = K * ∇R
+
+    V₃ = K * v₃
+    ∇V₃ = -K
 
     # Rankine sources
     s₁ = r₁ / h
@@ -135,6 +141,12 @@ function ∇Gᴺ(
     Gᴿ₂, ∇Gᴿ₂ = ∇Gᴿ(s₂, ∇s₂)
     Gᴿ₃, ∇Gᴿ₃ = ∇Gᴿ(s₃, ∇s₃)
 
+    # Function F₀
+    t = SVector{2,Float64}(X, V₃)
+    ∇t = SVector{2,Float64}(∇X, ∇V₃)
+
+    F₀, ∇F₀ = ∇Φ₀(t, ∇t)
+
     # Integrals L₁ and L₂
     u₁ = SVector{2,Float64}(A, B₁)
     u₂ = SVector{2,Float64}(A, B₂)
@@ -142,12 +154,12 @@ function ∇Gᴺ(
     ∇u₁ = SVector{2,Float64}(∇A, ∇B₁)
     ∇u₂ = SVector{2,Float64}(∇A, ∇B₂)
 
-    L₁, ∇L₁ = ∇Gᴸ(wave.L₁, u₁, ∇u₁)
-    L₂, ∇L₂ = ∇Gᴸ(wave.L₂, u₂, ∇u₂)
+    L₁, ∇L₁ = ∇Λ(wave.L₁, u₁, ∇u₁)
+    L₂, ∇L₂ = ∇Λ(wave.L₂, u₂, ∇u₂)
 
     # Combine components
-    G = Gᴿ₁ + Gᴿ₂ + Gᴿ₃ - L₁ - L₂ + 2*log(H)
-    ∇G = ∇Gᴿ₁ + ∇Gᴿ₂ + ∇Gᴿ₃ - ∇L₁ - ∇L₂
+    G = Gᴿ₁ + Gᴿ₂ + Gᴿ₃ - F₀ - L₁ - L₂ + 2*log(H)
+    ∇G = ∇Gᴿ₁ + ∇Gᴿ₂ + ∇Gᴿ₃ -∇F₀ - ∇L₁ - ∇L₂
 
     return G, ∇G
 end
@@ -156,7 +168,7 @@ end
 function HGᴺ(
     wave::FiniteDepthWave, field_point::SVector{2,Float64}, source_point::SVector{2,Float64}
 )
-    # Dimensional parameters ###############################################################
+    # Dimensional parameters
     h = wave.h
     K = wave.K
 
@@ -210,7 +222,7 @@ function HGᴺ(
     Hr₃ᶻᶻ = R² / r₃³
     Hr₃ = SMatrix{2, 2, Float64}([Hr₃ˣˣ Hr₃ˣᶻ; Hr₃ˣᶻ Hr₃ᶻᶻ])
 
-    # Dimensionless parameters #############################################################
+    # Dimensionless parameters
     H = K * h
 
     A = R / h
@@ -222,10 +234,11 @@ function HGᴺ(
     ∇B₁ = sign(v̄₁) / h
     ∇B₂ = 1 / h
 
-    V₃ = K * v₃
     X = K * R
-    Z = V₃ - im*X
-    ∇Z = SVector{2, ComplexF64}(-im*K*∇R, -K)
+    ∇X = K * ∇R
+
+    V₃ = K * v₃
+    ∇V₃ = -K
 
     # Rankine sources
     s₁ = r₁ / h
@@ -244,6 +257,12 @@ function HGᴺ(
     Gᴿ₂, ∇Gᴿ₂, HGᴿ₂ = HGᴿ(s₂, ∇s₂, Hs₂)
     Gᴿ₃, ∇Gᴿ₃, HGᴿ₃ = HGᴿ(s₃, ∇s₃, Hs₃)
 
+    # Function F₀
+    t = SVector{2,Float64}(X, V₃)
+    ∇t = SVector{2,Float64}(∇X, ∇V₃)
+
+    F₀, ∇F₀, HF₀ = HΦ₀(t, ∇t)
+
     # Integrals L₁ and L₂
     u₁ = SVector{2,Float64}(A, B₁)
     u₂ = SVector{2,Float64}(A, B₂)
@@ -251,13 +270,13 @@ function HGᴺ(
     ∇u₁ = SVector{2,Float64}(∇A, ∇B₁)
     ∇u₂ = SVector{2,Float64}(∇A, ∇B₂)
 
-    L₁, ∇L₁, HL₁ = HGᴸ(wave.L₁, u₁, ∇u₁)
-    L₂, ∇L₂, HL₂ = HGᴸ(wave.L₂, u₂, ∇u₂)
+    L₁, ∇L₁, HL₁ = HΛ(wave.L₁, u₁, ∇u₁)
+    L₂, ∇L₂, HL₂ = HΛ(wave.L₂, u₂, ∇u₂)
 
     # Combine components
-    G = Gᴿ₁ + Gᴿ₂ + Gᴿ₃ - L₁ - L₂ + 2*log(H)
-    ∇G = ∇Gᴿ₁ + ∇Gᴿ₂ + ∇Gᴿ₃ - ∇L₁ - ∇L₂
-    HG = HGᴿ₁ + HGᴿ₂ + HGᴿ₃ - HL₁ - HL₂
+    G = Gᴿ₁ + Gᴿ₂ + Gᴿ₃ - F₀ - L₁ - L₂ + 2*log(H)
+    ∇G = ∇Gᴿ₁ + ∇Gᴿ₂ + ∇Gᴿ₃ - ∇F₀ - ∇L₁ - ∇L₂
+    HG = HGᴿ₁ + HGᴿ₂ + HGᴿ₃ - HF₀ - HL₁ - HL₂
 
     return G, ∇G, HG
 end

@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "1c157c48a3ab0223fc129b56c5362961b2339f73"
+project_hash = "83cced6d8519367e960ac31f3e3b17c0d217f9b1"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1555,7 +1555,7 @@ version = "1.28.0"
     Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [[deps.WaveGreen2D]]
-deps = ["Chebyshaw", "JLD2", "StaticArrays"]
+deps = ["Chebyshaw", "JLD2", "SpecialFunctions", "StaticArrays"]
 path = "/home/rodpcastro/repos/WaveGreen2D"
 uuid = "afc8eec6-141e-41d8-af30-fb693dc34844"
 version = "0.0.1"
